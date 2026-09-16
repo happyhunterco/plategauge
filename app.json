@@ -1,0 +1,65 @@
+{
+  "expo": {
+    "name": "PlateGauge",
+    "slug": "plategauge",
+    "scheme": "plategauge",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "backgroundColor": "#FFFFFF",
+    "ios": {
+      "bundleIdentifier": "com.plategauge.app",
+      "buildNumber": "1",
+      "supportsTablet": false,
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSCameraUsageDescription": "PlateGauge uses the camera to photograph meals and scan food barcodes so you can log them.",
+        "NSPhotoLibraryUsageDescription": "PlateGauge lets you pick a meal photo from your library to estimate its calories."
+      }
+    },
+    "android": {
+      "package": "com.plategauge.app",
+      "adaptiveIcon": {
+        "backgroundColor": "#FFFFFF",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      }
+    },
+    "web": {
+      "favicon": "./assets/favicon.png",
+      "output": "single"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-font",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 140,
+          "backgroundColor": "#FFFFFF"
+        }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "PlateGauge uses the camera to photograph meals and scan food barcodes so you can log them.",
+          "recordAudioAndroid": false
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "PlateGauge lets you pick a meal photo from your library to estimate its calories.",
+          "cameraPermission": false,
+          "microphonePermission": false
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": false
+    }
+  }
+}
