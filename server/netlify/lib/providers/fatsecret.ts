@@ -60,7 +60,12 @@ export const fatsecret: NutritionProvider = {
   covers: ['restaurant', 'branded', 'generic'],
   configured: () => !!(env('FATSECRET_CLIENT_ID') && env('FATSECRET_CLIENT_SECRET')),
   async search(s: ProviderSearch) {
-    const data = await call({ method: 'foods.search', search_expression: s.query, page_number: String(s.page - 1), max_results: String(Math.min(s.pageSize, 50)) });
+    const data = await call({
+      method: 'foods.search',
+      search_expression: s.query,
+      page_number: String(s.page - 1),
+      max_results: String(Math.min(s.pageSize, 50)),
+    });
     const foods = (data.foods as { food?: FsFood | FsFood[] } | undefined)?.food;
     const list = Array.isArray(foods) ? foods : foods ? [foods] : [];
     // FatSecret doesn't flag restaurants; known chains are recognized by brand in withRestaurant.
@@ -73,7 +78,12 @@ export const fatsecret: NutritionProvider = {
     const id = (found.food_id as { value?: string } | undefined)?.value;
     if (!id || id === '0') return null;
     const detail = await call({ method: 'food.get.v4', food_id: id });
-    const food = detail.food as { food_name: string; brand_name?: string; food_type: string; servings?: { serving?: Record<string, string> | Record<string, string>[] } };
+    const food = detail.food as {
+      food_name: string;
+      brand_name?: string;
+      food_type: string;
+      servings?: { serving?: Record<string, string> | Record<string, string>[] };
+    };
     const sv = food?.servings?.serving;
     const s = Array.isArray(sv) ? sv[0] : sv;
     if (!s) return null;
@@ -85,7 +95,11 @@ export const fatsecret: NutritionProvider = {
         kind: 'branded',
         barcode: code,
         serving: { description: s.serving_description ?? '1 serving', quantity: 1, unit: 'serving', grams: num(s.metric_serving_amount) },
-        nutrients: nutrients(num(s.calories) ?? 0, num(s.protein), num(s.carbohydrate), num(s.fat), { fiber: num(s.fiber), sugar: num(s.sugar), sodium: num(s.sodium) }),
+        nutrients: nutrients(num(s.calories) ?? 0, num(s.protein), num(s.carbohydrate), num(s.fat), {
+          fiber: num(s.fiber),
+          sugar: num(s.sugar),
+          sodium: num(s.sodium),
+        }),
         source: { provider: 'fatsecret', id, quality: 'verified_packaged' },
       },
     };

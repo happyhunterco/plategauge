@@ -23,7 +23,7 @@ export type Quality =
   | 'photo_estimate' // AI from a photo
   | 'development'; // local test fixture, never shipped as real data
 
-export type ProviderId = 'usda' | 'off' | 'nutritionix' | 'fatsecret' | 'user' | 'ai' | 'template' | 'dev';
+export type ProviderId = 'usda' | 'off' | 'nutritionix' | 'fatsecret' | 'hff' | 'user' | 'ai' | 'template' | 'dev';
 
 export type SourceInfo = {
   provider: ProviderId;

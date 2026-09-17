@@ -43,16 +43,31 @@ function nixToItem(x: NixItem): FoodItem | null {
     name: x.food_name,
     brand: x.brand_name ?? null,
     kind: restaurant ? 'restaurant' : 'branded',
-    serving: { description: `${qty} ${unit}${x.serving_weight_grams ? ` (${Math.round(x.serving_weight_grams)} g)` : ''}`, quantity: qty, unit, grams: x.serving_weight_grams ?? null },
+    serving: {
+      description: `${qty} ${unit}${x.serving_weight_grams ? ` (${Math.round(x.serving_weight_grams)} g)` : ''}`,
+      quantity: qty,
+      unit,
+      grams: x.serving_weight_grams ?? null,
+    },
     nutrients: nutrients(
       kcal,
       x.nf_protein ?? attr(x.full_nutrients, 203),
       x.nf_total_carbohydrate ?? attr(x.full_nutrients, 205),
       x.nf_total_fat ?? attr(x.full_nutrients, 204),
-      { fiber: x.nf_dietary_fiber ?? attr(x.full_nutrients, 291), sugar: x.nf_sugars ?? attr(x.full_nutrients, 269), sodium: x.nf_sodium ?? attr(x.full_nutrients, 307) }
+      {
+        fiber: x.nf_dietary_fiber ?? attr(x.full_nutrients, 291),
+        sugar: x.nf_sugars ?? attr(x.full_nutrients, 269),
+        sodium: x.nf_sodium ?? attr(x.full_nutrients, 307),
+      },
     ),
     image: x.photo?.thumb ?? null,
-    source: { provider: 'nutritionix', id: x.nix_item_id, url: 'https://www.nutritionix.com', updatedAt: x.updated_at, quality: restaurant ? 'verified_restaurant' : 'verified_packaged' },
+    source: {
+      provider: 'nutritionix',
+      id: x.nix_item_id,
+      url: 'https://www.nutritionix.com',
+      updatedAt: x.updated_at,
+      quality: restaurant ? 'verified_restaurant' : 'verified_packaged',
+    },
   };
   return withRestaurant(item, restaurant);
 }
@@ -70,7 +85,10 @@ export const nutritionix: NutritionProvider = {
     });
     if (!res.ok) throw new Error(`Nutritionix ${res.status}`);
     const data = (await res.json()) as { branded?: NixItem[] };
-    return (data.branded ?? []).slice(0, s.pageSize).map(nixToItem).filter((x): x is FoodItem => !!x);
+    return (data.branded ?? [])
+      .slice(0, s.pageSize)
+      .map(nixToItem)
+      .filter((x): x is FoodItem => !!x);
   },
   async barcode(code: string): Promise<BarcodeHit | null> {
     const res = await fetch(`https://trackapi.nutritionix.com/v2/search/item?upc=${encodeURIComponent(code)}`, { headers: headers() });
@@ -84,7 +102,16 @@ export const nutritionix: NutritionProvider = {
     const per = (v: number | null | undefined) => (v == null || !g ? null : (v / g) * 100);
     return {
       item: { ...item, barcode: code },
-      signals: { per100g: { energyKcal: per(f.nf_calories), sugars: per(f.nf_sugars), saturatedFat: per(attr(f.full_nutrients, 606)), sodiumMg: per(f.nf_sodium), fiber: per(f.nf_dietary_fiber), protein: per(f.nf_protein) } },
+      signals: {
+        per100g: {
+          energyKcal: per(f.nf_calories),
+          sugars: per(f.nf_sugars),
+          saturatedFat: per(attr(f.full_nutrients, 606)),
+          sodiumMg: per(f.nf_sodium),
+          fiber: per(f.nf_dietary_fiber),
+          protein: per(f.nf_protein),
+        },
+      },
     };
   },
 };

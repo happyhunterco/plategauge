@@ -1,4 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
+import { useId } from 'react';
+import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 import { useRouter } from 'expo-router';
 import type { ReactNode } from 'react';
 import { Pressable, StyleSheet, Text, View, type ViewStyle } from 'react-native';
@@ -7,7 +9,7 @@ import type { Quality, SourceInfo } from '../../shared/food';
 import { QUALITY_LABEL } from '../../shared/food';
 import { fmt, useStreak } from '../hooks';
 import { useStore } from '../store';
-import { color, font, space } from '../theme';
+import { color, font, shadow, space } from '../theme';
 import { LogoMark } from './Logo';
 import { Group, tap, type IconName } from './UI';
 import { CONTENT, useWide } from '../layout';
@@ -27,6 +29,7 @@ const PROVIDER_NAME: Record<string, string> = {
   off: 'Open Food Facts',
   nutritionix: 'Nutritionix',
   fatsecret: 'FatSecret',
+  hff: 'HealthyFastFood.org',
   user: 'You',
   ai: 'AI',
   template: 'PlateGauge',
@@ -239,8 +242,8 @@ const styles = StyleSheet.create({
   badgeText: { fontSize: 12, fontWeight: '600' },
   sourceLine: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 6, minWidth: 0 },
   sourceText: { fontSize: 12, color: color.faint, flexShrink: 1 },
-  card: { backgroundColor: '#fff', borderRadius: 18, padding: space.l, borderWidth: StyleSheet.hairlineWidth, borderColor: color.line },
-  choices: { backgroundColor: color.wash, borderRadius: 18, padding: space.l },
+  card: { backgroundColor: '#fff', borderRadius: 20, padding: space.l, borderWidth: StyleSheet.hairlineWidth, borderColor: color.lineSoft, ...shadow.card },
+  choices: { backgroundColor: color.wash, borderRadius: 20, padding: space.l },
   choicePrompt: { fontFamily: font.display, fontSize: 17, color: color.ink, marginBottom: space.m },
   choiceRow: { flexDirection: 'row', gap: space.s },
   choice: {
@@ -250,12 +253,13 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     alignItems: 'center',
     justifyContent: 'center',
+    ...shadow.soft,
     paddingHorizontal: 6,
     borderWidth: 1,
     borderColor: color.line,
   },
   choiceText: { fontSize: 16, fontWeight: '600', color: color.ink, textAlign: 'center' },
-  avatar: { backgroundColor: color.ink, alignItems: 'center', justifyContent: 'center' },
+  avatar: { backgroundColor: color.ink, alignItems: 'center', justifyContent: 'center', ...shadow.soft },
   avatarText: { color: '#fff', fontFamily: font.display, fontSize: 14 },
   streak: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, height: 34, borderRadius: 17, backgroundColor: color.wash },
   streakText: { fontFamily: font.display, fontSize: 15, color: color.ink },
@@ -279,7 +283,8 @@ const styles = StyleSheet.create({
     maxWidth: 480,
     marginHorizontal: 'auto',
     backgroundColor: color.ink,
-    borderRadius: 14,
+    borderRadius: 16,
+    ...shadow.raised,
     paddingHorizontal: space.l,
     minHeight: 50,
     flexDirection: 'row',
@@ -304,3 +309,22 @@ const styles = StyleSheet.create({
   row: { paddingVertical: 13, paddingHorizontal: space.l, minHeight: 52 },
   rowLine: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: color.line },
 });
+
+/** A rounded surface filled with a diagonal two-color gradient, for hero cards and tiles. */
+export function GradientBox({ children, style, from = color.ink, to = color.ink2 }: { children?: ReactNode; style?: ViewStyle; from?: string; to?: string }) {
+  const id = `gb${useId().replace(/[^a-zA-Z0-9]/g, '')}`;
+  return (
+    <View style={[{ borderRadius: 18, overflow: 'hidden' }, style]}>
+      <Svg style={StyleSheet.absoluteFill} width="100%" height="100%">
+        <Defs>
+          <LinearGradient id={id} x1="0%" y1="0%" x2="100%" y2="100%">
+            <Stop offset="0%" stopColor={from} />
+            <Stop offset="100%" stopColor={to} />
+          </LinearGradient>
+        </Defs>
+        <Rect width="100%" height="100%" fill={`url(#${id})`} />
+      </Svg>
+      {children}
+    </View>
+  );
+}

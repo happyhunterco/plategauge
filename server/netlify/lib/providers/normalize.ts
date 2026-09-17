@@ -8,7 +8,13 @@ export const num = (v: unknown): number | null => {
 };
 export const r1 = (v: number | null | undefined) => (v == null ? null : Math.round(v * 10) / 10);
 
-export function nutrients(calories: number, protein: number | null, carbs: number | null, fat: number | null, extra: { fiber?: number | null; sugar?: number | null; sodium?: number | null } = {}): Nutrients {
+export function nutrients(
+  calories: number,
+  protein: number | null,
+  carbs: number | null,
+  fat: number | null,
+  extra: { fiber?: number | null; sugar?: number | null; sodium?: number | null } = {},
+): Nutrients {
   return {
     calories: Math.round(calories),
     protein: r1(protein ?? 0)!,

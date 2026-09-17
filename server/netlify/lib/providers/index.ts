@@ -5,12 +5,13 @@ import { labelScore, type LabelScore, type ProductSignals } from '../../../../sh
 import { norm, restaurantById } from '../../../../shared/restaurants';
 import { TTLCache, withTimeout } from '../http';
 import { fatsecret } from './fatsecret';
+import { hff } from './hff';
 import { nutritionix } from './nutritionix';
 import { off, offProduct, offSignals } from './off';
 import type { NutritionProvider } from './types';
 import { usda } from './usda';
 
-export const PROVIDERS: NutritionProvider[] = [nutritionix, fatsecret, usda, off];
+export const PROVIDERS: NutritionProvider[] = [hff, nutritionix, fatsecret, usda, off];
 export const configuredProviders = () => PROVIDERS.filter((p) => p.configured());
 
 const searchCache = new TTLCache<SearchPage>(10 * 60_000);
@@ -51,14 +52,18 @@ export async function searchFoods(p: SearchParams): Promise<SearchPage> {
   const results = await Promise.all(
     active.map(async (pr) => {
       try {
-        const items = await withTimeout(pr.search!({ query, page: p.page, pageSize: p.pageSize, restaurantOnly: wantRestaurant, brandedOnly: p.kind === 'branded' }), 5000, pr.id);
+        const items = await withTimeout(
+          pr.search!({ query, page: p.page, pageSize: p.pageSize, restaurantOnly: wantRestaurant, brandedOnly: p.kind === 'branded' }),
+          5000,
+          pr.id,
+        );
         providers.push({ id: pr.id, ok: true });
         return items;
       } catch (e) {
         providers.push({ id: pr.id, ok: false, error: (e as Error).message });
         return [] as FoodItem[];
       }
-    })
+    }),
   );
 
   let items = dedupe(results.flat());
@@ -90,7 +95,11 @@ const jaccard = (a: string, b: string) => {
 export async function lookupRestaurantItem(restaurantId: string, restaurantName: string, query: string): Promise<FoodItem | null> {
   const page = await searchFoods({ q: query, page: 1, pageSize: 25, restaurantId });
   const brandWords = new Set(norm(restaurantName).split(' '));
-  const clean = (s: string) => norm(s).split(' ').filter((w) => !brandWords.has(w)).join(' ');
+  const clean = (s: string) =>
+    norm(s)
+      .split(' ')
+      .filter((w) => !brandWords.has(w))
+      .join(' ');
   let best: { item: FoodItem; s: number } | null = null;
   for (const it of page.items) {
     const s = jaccard(clean(query), clean(it.name));

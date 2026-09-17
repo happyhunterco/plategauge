@@ -25,6 +25,8 @@ const n = (
 });
 
 export const REFERENCE = {
+  mustard_tsp: { label: 'Mustard', n: n(3, 0, 0, 0, 55, 0, 0) },
+  onion_slice: { label: 'Onion', n: n(5, 0, 1, 0, 0, 1, 0) },
   mayo_tbsp: { label: 'Mayo (1 tbsp)', n: n(94, 0, 0, 10, 88, 0, 0) },
   cheese_slice: { label: 'American cheese (1 slice)', n: n(70, 4, 1, 6, 300, 1, 0) },
   bacon_2: { label: 'Bacon (2 slices)', n: n(86, 6, 0, 7, 274, 0, 0) },

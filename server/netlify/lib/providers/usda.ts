@@ -53,7 +53,14 @@ export function fdcToItem(f: FdcFood): FoodItem | null {
     brand,
     kind: branded ? 'branded' : 'generic',
     serving: grams
-      ? { description: f.householdServingFullText ? `${f.householdServingFullText} (${Math.round(grams)} ${f.servingSizeUnit?.toLowerCase().startsWith('m') ? 'ml' : 'g'})` : `${Math.round(grams)} g`, quantity: 1, unit: 'serving', grams }
+      ? {
+          description: f.householdServingFullText
+            ? `${f.householdServingFullText} (${Math.round(grams)} ${f.servingSizeUnit?.toLowerCase().startsWith('m') ? 'ml' : 'g'})`
+            : `${Math.round(grams)} g`,
+          quantity: 1,
+          unit: 'serving',
+          grams,
+        }
       : { description: '100 g', quantity: 100, unit: 'g', grams: 100 },
     nutrients: nutrients(kcal100 * k, v(ID.protein), v(ID.carbs), v(ID.fat), { fiber: v(ID.fiber), sugar: v(ID.sugar), sodium: v(ID.sodium) }),
     barcode: f.gtinUpc ?? null,
@@ -84,7 +91,11 @@ export const usda: NutritionProvider = {
   covers: ['generic', 'branded', 'restaurant'],
   configured: () => !!env('USDA_FDC_API_KEY'),
   async search(s: ProviderSearch) {
-    const dataType = s.brandedOnly ? ['Branded'] : s.restaurantOnly ? ['SR Legacy', 'Survey (FNDDS)'] : ['Foundation', 'SR Legacy', 'Survey (FNDDS)', 'Branded'];
+    const dataType = s.brandedOnly
+      ? ['Branded']
+      : s.restaurantOnly
+        ? ['SR Legacy', 'Survey (FNDDS)']
+        : ['Foundation', 'SR Legacy', 'Survey (FNDDS)', 'Branded'];
     const foods = await fdcSearch({ query: s.query, dataType, pageSize: s.pageSize, pageNumber: s.page });
     return foods.map(fdcToItem).filter((x): x is FoodItem => !!x);
   },

@@ -3,18 +3,29 @@ import { Platform } from 'react-native';
 // Palette pulled straight from the PlateGauge mark.
 export const color = {
   ink: '#0B2551', // navy ring
+  ink2: '#123268', // lighter navy, for gradients/hovers
   gauge: '#1592FF', // blue fill
+  gauge2: '#57B4FF', // lighter blue, for gradients
   needle: '#F59A1E', // orange needle
   plate: '#FFFFFF',
   rim: '#CFDBE6', // plate rim
   wash: '#F3F6FA', // grouped background
+  wash2: '#EAF0F7', // slightly deeper wash, for nested surfaces
   sub: '#5B6B84', // secondary text
   faint: '#93A1B5',
   line: '#E3E9F0',
+  lineSoft: '#EDF1F6',
   danger: '#D6453D',
+  success: '#1C8C5E',
   protein: '#1592FF',
   carbs: '#0B2551',
   fat: '#F59A1E',
+};
+
+export const shadow = {
+  card: { shadowColor: '#0B2551', shadowOpacity: 0.06, shadowRadius: 16, shadowOffset: { width: 0, height: 6 }, elevation: 2 },
+  raised: { shadowColor: '#0B2551', shadowOpacity: 0.12, shadowRadius: 24, shadowOffset: { width: 0, height: 10 }, elevation: 6 },
+  soft: { shadowColor: '#0B2551', shadowOpacity: 0.04, shadowRadius: 8, shadowOffset: { width: 0, height: 2 }, elevation: 1 },
 };
 
 export const font = {

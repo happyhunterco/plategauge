@@ -46,7 +46,10 @@ export async function withTimeout<T>(p: Promise<T>, ms: number, label: string): 
 /** Small TTL cache per function instance; the CDN cache handles the rest. */
 export class TTLCache<V> {
   private m = new Map<string, { v: V; exp: number }>();
-  constructor(private ttlMs: number, private max = 500) {}
+  constructor(
+    private ttlMs: number,
+    private max = 500,
+  ) {}
   get(k: string) {
     const e = this.m.get(k);
     if (!e) return undefined;

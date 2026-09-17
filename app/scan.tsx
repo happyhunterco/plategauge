@@ -4,7 +4,7 @@ import { ImageManipulator, SaveFormat } from 'expo-image-manipulator';
 import * as ImagePicker from 'expo-image-picker';
 import { useIsFocused, useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Linking, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Linking, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { checkDigitValid } from '../shared/barcode';
 import { useHandoff } from '../src/building';
@@ -18,10 +18,11 @@ import { color, font, space } from '../src/theme';
 type Mode = 'food' | 'barcode' | 'label';
 
 async function toBase64(uri: string) {
+  // Smaller photos mean a faster round trip to Claude — this stays plenty sharp for reading a plate or a label.
   const ctx = ImageManipulator.manipulate(uri);
-  ctx.resize({ width: 1280 });
+  ctx.resize({ width: 1024 });
   const img = await ctx.renderAsync();
-  const out = await img.saveAsync({ base64: true, compress: 0.7, format: SaveFormat.JPEG });
+  const out = await img.saveAsync({ base64: true, compress: 0.6, format: SaveFormat.JPEG });
   return out.base64 ?? '';
 }
 
@@ -44,7 +45,6 @@ export default function Scan() {
   const slow = slowFor === mode;
   const cam = useRef<CameraView>(null);
   const lastCode = useRef('');
-  const web = Platform.OS === 'web';
 
   useEffect(() => {
     aiAvailable().then((a) => setAiReady(!!a));
@@ -112,9 +112,9 @@ export default function Scan() {
     find(data);
   };
 
-  const needsCamera = !web || mode !== 'barcode';
-  const cameraOk = perm?.granted && !(web && mode === 'barcode');
+  const cameraOk = !!perm?.granted;
   const aiBlocked = mode !== 'barcode' && aiReady === false;
+  const needsCamera = true;
 
   return (
     <View style={styles.dark}>

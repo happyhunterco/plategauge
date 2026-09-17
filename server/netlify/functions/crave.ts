@@ -29,11 +29,20 @@ export default async (req: Request) => {
       ideas: aiConfigured()
         ? async (intent, l) => {
             const wants = [...intent.flavors, ...intent.textures, intent.temperature].filter(Boolean).join(', ');
-            const out = await claude(PROMPTS.ideas, [{ type: 'text', text: `Craving: ${intent.raw}\nMust be: ${wants || 'whatever they described'}\nRemaining today: ${l.calories} kcal, ${l.protein}g protein, ${l.carbs}g carbs, ${l.fat}g fat.\nAvoid: ${[...prefs.restrictions, ...prefs.allergies].join(', ') || 'nothing'}` }], 1200);
+            const out = await claude(
+              PROMPTS.ideas,
+              [
+                {
+                  type: 'text',
+                  text: `Craving: ${intent.raw}\nMust be: ${wants || 'whatever they described'}\nRemaining today: ${l.calories} kcal, ${l.protein}g protein, ${l.carbs}g carbs, ${l.fat}g fat.\nAvoid: ${[...prefs.restrictions, ...prefs.allergies].join(', ') || 'nothing'}`,
+                },
+              ],
+              1200,
+            );
             return foodsFromAi(extractJson(out), 'estimate', 'ideas');
           }
         : undefined,
-    }
+    },
   );
   return json(result);
 };

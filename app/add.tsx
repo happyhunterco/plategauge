@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter, type Href } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { GradientBox } from '../src/components/Kit';
 import { tap, type IconName } from '../src/components/UI';
 import { color, font, space } from '../src/theme';
 import { useWide } from '../src/layout';
@@ -48,10 +49,12 @@ export default function AddSheet() {
           </Pressable>
         </View>
         <View style={styles.scanRow}>
-          {SCAN.map((a) => (
-            <Pressable key={a.label} onPress={() => go(a.to)} accessibilityRole="button" style={({ pressed }) => [styles.scan, pressed && { opacity: 0.85 }]}>
-              <Ionicons name={a.icon} size={26} color="#fff" />
-              <Text style={styles.scanText}>{a.label}</Text>
+          {SCAN.map((a, i) => (
+            <Pressable key={a.label} onPress={() => go(a.to)} accessibilityRole="button" style={({ pressed }) => [{ flex: 1 }, pressed && { opacity: 0.88 }]}>
+              <GradientBox style={styles.scan} from={i === 0 ? color.ink : color.gauge} to={i === 0 ? color.ink2 : color.gauge2}>
+                <Ionicons name={a.icon} size={26} color="#fff" />
+                <Text style={styles.scanText}>{a.label}</Text>
+              </GradientBox>
             </Pressable>
           ))}
         </View>
@@ -92,7 +95,7 @@ const styles = StyleSheet.create({
   title: { fontFamily: font.displayBold, fontSize: 22, color: color.ink },
   close: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: color.wash },
   scanRow: { flexDirection: 'row', gap: space.m },
-  scan: { flex: 1, height: 92, borderRadius: 18, backgroundColor: color.ink, alignItems: 'center', justifyContent: 'center', gap: 6 },
+  scan: { height: 92, alignItems: 'center', justifyContent: 'center', gap: 6 },
   scanText: { color: '#fff', fontFamily: font.display, fontSize: 15 },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: space.s, marginTop: space.m },
   cell: {

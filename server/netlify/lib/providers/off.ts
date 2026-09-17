@@ -23,7 +23,8 @@ type OffProduct = {
   last_modified_t?: number;
 };
 
-const FIELDS = 'code,product_name,product_name_en,brands,serving_size,serving_quantity,nutriments,nutriscore_grade,nova_group,additives_tags,image_front_small_url,categories_tags,last_modified_t';
+const FIELDS =
+  'code,product_name,product_name_en,brands,serving_size,serving_quantity,nutriments,nutriscore_grade,nova_group,additives_tags,image_front_small_url,categories_tags,last_modified_t';
 
 export function offToItem(p: OffProduct): FoodItem | null {
   const n = p.nutriments ?? {};
@@ -40,8 +41,15 @@ export function offToItem(p: OffProduct): FoodItem | null {
     name,
     brand: p.brands?.split(',')[0]?.trim() || null,
     kind: 'branded',
-    serving: hasServing && p.serving_size ? { description: p.serving_size, quantity: 1, unit: 'serving', grams } : { description: '100 g', quantity: 100, unit: 'g', grams: 100 },
-    nutrients: nutrients(kcal, g('proteins'), g('carbohydrates'), g('fat'), { fiber: g('fiber'), sugar: g('sugars'), sodium: sodiumG == null ? null : sodiumG * 1000 }),
+    serving:
+      hasServing && p.serving_size
+        ? { description: p.serving_size, quantity: 1, unit: 'serving', grams }
+        : { description: '100 g', quantity: 100, unit: 'g', grams: 100 },
+    nutrients: nutrients(kcal, g('proteins'), g('carbohydrates'), g('fat'), {
+      fiber: g('fiber'),
+      sugar: g('sugars'),
+      sodium: sodiumG == null ? null : sodiumG * 1000,
+    }),
     barcode: p.code ?? null,
     image: p.image_front_small_url ?? null,
     source: {
@@ -75,7 +83,9 @@ export function offSignals(p: OffProduct) {
 }
 
 export async function offProduct(code: string): Promise<OffProduct | null> {
-  const res = await fetch(`https://world.openfoodfacts.org/api/v2/product/${encodeURIComponent(code)}.json?fields=${FIELDS}`, { headers: { 'User-Agent': OFF_UA } });
+  const res = await fetch(`https://world.openfoodfacts.org/api/v2/product/${encodeURIComponent(code)}.json?fields=${FIELDS}`, {
+    headers: { 'User-Agent': OFF_UA },
+  });
   if (res.status === 404) return null;
   if (!res.ok) throw new Error(`Open Food Facts ${res.status}`);
   const data = (await res.json()) as { status?: number; product?: OffProduct };

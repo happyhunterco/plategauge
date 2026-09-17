@@ -99,6 +99,22 @@ const toggles = (id: string, label: string, opts: ModOption[], defaults: string[
   defaults,
 });
 
+/**
+ * "Comes with" toggle: common toppings a food like this typically includes, so removing
+ * one gives an instant calorie estimate without needing a real per-topping breakdown from
+ * the restaurant. Always tap-to-remove (defaults all on), never tap-to-add, so it never
+ * claims a food has something it might not — the help text says so explicitly.
+ */
+const standardGroup = (opts: ModOption[]): ModGroup => ({
+  id: 'standard',
+  label: 'Comes with (tap to remove)',
+  kind: 'toggle',
+  scope: 'item',
+  options: opts,
+  defaults: opts.map((o) => o.id),
+  help: 'Typical for this kind of food. Estimates — remove anything you don’t want, or don’t think is on yours, for fewer calories.',
+});
+
 type Template = { title: string; groups: (item: FoodItem) => ModGroup[] };
 
 const TEMPLATES: Partial<Record<FoodCategory, Template>> = {
@@ -121,7 +137,18 @@ const TEMPLATES: Partial<Record<FoodCategory, Template>> = {
           unitLabel: 'patty',
         },
         toggles('cheese', 'Cheese', [ref('cheese', 'cheese_slice', 'Cheese')], cheese ? ['cheese'] : []),
-        toggles('extras', 'Add', [ref('bacon', 'bacon_2', 'Bacon'), ref('mayo', 'mayo_tbsp', 'Mayo')]),
+        standardGroup([
+          ref('pickles', 'pickles', 'Pickles'),
+          ref('onion', 'onion', 'Onion'),
+          ref('ketchup', 'ketchup_tbsp', 'Ketchup'),
+          ref('mustard', 'mustard_tsp', 'Mustard'),
+        ]),
+        toggles('extras', 'Add', [
+          ref('bacon', 'bacon_2', 'Bacon'),
+          ref('mayo', 'mayo_tbsp', 'Mayo'),
+          ref('lettuce', 'lettuce', 'Lettuce'),
+          ref('tomato', 'tomato', 'Tomato'),
+        ]),
         {
           id: 'bun',
           label: 'Bun',
@@ -161,12 +188,8 @@ const TEMPLATES: Partial<Record<FoodCategory, Template>> = {
         ],
         defaults: ['burrito'],
       },
-      toggles('adds', 'Add', [
-        ref('cheese', 'shredded_cheese', 'Cheese'),
-        ref('sour_cream', 'sour_cream_2tbsp', 'Sour cream'),
-        ref('guac', 'guac_2oz', 'Guacamole'),
-        ref('meat', 'chicken_3oz', 'Extra chicken'),
-      ]),
+      standardGroup([ref('cheese', 'shredded_cheese', 'Cheese'), ref('sour_cream', 'sour_cream_2tbsp', 'Sour cream')]),
+      toggles('adds', 'Add', [ref('guac', 'guac_2oz', 'Guacamole'), ref('meat', 'chicken_3oz', 'Extra chicken')]),
       portionGroup(),
       drinkGroup,
     ],
@@ -199,18 +222,16 @@ const TEMPLATES: Partial<Record<FoodCategory, Template>> = {
     title: 'Build your tacos',
     groups: () => [
       { id: 'count', label: 'How many', kind: 'count', scope: 'item', options: [], defaults: 1, min: 1, max: 6, unitLabel: 'taco' },
-      toggles('adds', 'Add', [
-        ref('cheese', 'shredded_cheese', 'Cheese'),
-        ref('sour_cream', 'sour_cream_2tbsp', 'Sour cream'),
-        ref('guac', 'guac_2oz', 'Guacamole'),
-      ]),
+      standardGroup([ref('cheese', 'shredded_cheese', 'Cheese')]),
+      toggles('adds', 'Add', [ref('sour_cream', 'sour_cream_2tbsp', 'Sour cream'), ref('guac', 'guac_2oz', 'Guacamole')]),
       drinkGroup,
     ],
   },
   sandwich: {
     title: 'Build your sandwich',
     groups: () => [
-      toggles('adds', 'Add', [ref('cheese', 'cheese_slice', 'Cheese'), ref('bacon', 'bacon_2', 'Bacon'), ref('mayo', 'mayo_tbsp', 'Mayo')]),
+      standardGroup([ref('lettuce', 'lettuce', 'Lettuce'), ref('tomato', 'tomato', 'Tomato'), ref('mayo', 'mayo_tbsp', 'Mayo')]),
+      toggles('adds', 'Add', [ref('cheese', 'cheese_slice', 'Cheese'), ref('bacon', 'bacon_2', 'Bacon')]),
       portionGroup(),
       sideGroup,
       drinkGroup,
@@ -274,7 +295,8 @@ const TEMPLATES: Partial<Record<FoodCategory, Template>> = {
         ],
         defaults: ['as_served'],
       },
-      toggles('adds', 'Add', [ref('chicken', 'chicken_3oz', 'Grilled chicken'), ref('cheese', 'shredded_cheese', 'Cheese'), ref('bacon', 'bacon_2', 'Bacon')]),
+      standardGroup([ref('cheese', 'shredded_cheese', 'Cheese')]),
+      toggles('adds', 'Add', [ref('chicken', 'chicken_3oz', 'Grilled chicken'), ref('bacon', 'bacon_2', 'Bacon')]),
       portionGroup(),
     ],
   },

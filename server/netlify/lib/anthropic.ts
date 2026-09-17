@@ -15,7 +15,10 @@ export async function claude(system: string, content: Content[], maxTokens = 150
     throw Object.assign(new Error('upstream'), { status: 502 });
   }
   const data = (await res.json()) as { content?: { type: string; text?: string }[] };
-  return (data.content ?? []).filter((b) => b.type === 'text').map((b) => b.text).join('');
+  return (data.content ?? [])
+    .filter((b) => b.type === 'text')
+    .map((b) => b.text)
+    .join('');
 }
 
 export const aiConfigured = () => !!env('ANTHROPIC_API_KEY');

@@ -6,7 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { fmt } from '../hooks';
 import { fieldLayout } from './fieldLayout';
 import { column, useWide } from '../layout';
-import { color, font, radius, space, type } from '../theme';
+import { color, font, radius, shadow, space, type } from '../theme';
 type Macros = { calories: number; protein: number; carbs: number; fat: number };
 
 export type IconName = ComponentProps<typeof Ionicons>['name'];
@@ -99,10 +99,10 @@ export function Button({
       }}
       style={({ pressed }) => [
         styles.btn,
-        kind === 'primary' && { backgroundColor: color.ink },
+        kind === 'primary' && { backgroundColor: color.ink, ...shadow.soft },
         kind === 'secondary' && { backgroundColor: color.wash },
         kind === 'ghost' && { backgroundColor: 'transparent', height: 40 },
-        (disabled || pressed) && { opacity: disabled ? 0.4 : 0.8 },
+        (disabled || pressed) && { opacity: disabled ? 0.4 : 0.8, ...(pressed && !disabled ? { transform: [{ scale: 0.985 }] } : null) },
         style,
       ]}
     >
@@ -358,7 +358,7 @@ const styles = StyleSheet.create({
   subtitle: { fontSize: 15, color: color.sub, marginTop: 2 },
   btn: {
     height: 52,
-    borderRadius: radius.m,
+    borderRadius: radius.l,
     alignItems: 'center',
     justifyContent: 'center',
     flexDirection: 'row',

@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Gauge } from '../../src/components/Gauge';
-import { DevDataBanner, TopBar } from '../../src/components/Kit';
+import { DevDataBanner, GradientBox, TopBar } from '../../src/components/Kit';
 import { CalorieFacts, MacroTiles, Panels, RecentlyLogged, useDaySwipe, WeekStrip } from '../../src/components/Today';
 import { Group, macroLine, Row, Section, tap } from '../../src/components/UI';
 import { fmt, useDayTotals } from '../../src/hooks';
@@ -67,18 +67,20 @@ export default function Today() {
             </View>
 
             <Pressable
-              style={({ pressed }) => [styles.crave, pressed && { opacity: 0.9 }]}
               onPress={() => {
                 tap();
                 router.navigate('/crave');
               }}
               accessibilityRole="button"
+              style={({ pressed }) => pressed && { opacity: 0.92 }}
             >
-              <View style={{ flex: 1 }}>
-                <Text style={styles.craveTitle}>What’re ya hungry for?</Text>
-                <Text style={styles.craveSub}>Name any food. We’ll make it fit your {fmt(Math.max(t.left.calories, 0))} left.</Text>
-              </View>
-              <Ionicons name="arrow-forward" size={20} color="#fff" />
+              <GradientBox style={styles.crave}>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.craveTitle}>What’re ya hungry for?</Text>
+                  <Text style={styles.craveSub}>Name any food. We’ll make it fit your {fmt(Math.max(t.left.calories, 0))} left.</Text>
+                </View>
+                <Ionicons name="arrow-forward" size={20} color="#fff" />
+              </GradientBox>
             </Pressable>
 
             {wide ? (

@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { AccessibilityInfo, StyleSheet, Text, View } from 'react-native';
-import Svg, { Circle, Line, Path } from 'react-native-svg';
+import Svg, { Circle, Defs, Line, LinearGradient, Path, Stop } from 'react-native-svg';
 import { fmt } from '../hooks';
-import { color, font } from '../theme';
+import { color, font, shadow } from '../theme';
 import { arc } from './Logo';
 
 type Props = { eaten: number; goal: number; size?: number };
@@ -58,20 +58,35 @@ export function Gauge({ eaten, goal, size = 264 }: Props) {
   const inner = r * 0.66 * 2 - 16;
   const bigSize = Math.floor(Math.min(small ? 40 : 46, inner / (bigText.length * 0.62)));
   const needle = [r - 17, r + 17].map((rr) => [c + rr * Math.cos(a), c + rr * Math.sin(a)]);
+  const fillStroke = over ? 'url(#gaugeOver)' : 'url(#gaugeFill)';
 
   return (
     <View
-      style={{ width: size, height: size, alignSelf: 'center' }}
+      style={[{ width: size, height: size, borderRadius: size / 2, alignSelf: 'center' }, shadow.raised]}
       accessible
       accessibilityRole="progressbar"
       accessibilityLabel={over ? `${fmt(eaten - goal)} calories over your goal` : `${fmt(left)} calories left of ${fmt(goal)}`}
     >
       <Svg width={size} height={size}>
-        <Circle cx={c} cy={c} r={r} stroke={color.ink} strokeWidth={stroke} fill={color.plate} />
+        <Defs>
+          <LinearGradient id="gaugeFill" x1="0%" y1="0%" x2="100%" y2="100%">
+            <Stop offset="0%" stopColor={color.gauge2} />
+            <Stop offset="100%" stopColor={color.gauge} />
+          </LinearGradient>
+          <LinearGradient id="gaugeOver" x1="0%" y1="0%" x2="100%" y2="100%">
+            <Stop offset="0%" stopColor="#FFC978" />
+            <Stop offset="100%" stopColor={color.needle} />
+          </LinearGradient>
+          <LinearGradient id="gaugeTrack" x1="0%" y1="0%" x2="100%" y2="100%">
+            <Stop offset="0%" stopColor={color.ink2} />
+            <Stop offset="100%" stopColor={color.ink} />
+          </LinearGradient>
+        </Defs>
+        <Circle cx={c} cy={c} r={r} stroke="url(#gaugeTrack)" strokeWidth={stroke} fill={color.plate} />
         {p >= 0.999 ? (
-          <Circle cx={c} cy={c} r={r} stroke={over ? color.needle : color.gauge} strokeWidth={stroke} fill="none" />
+          <Circle cx={c} cy={c} r={r} stroke={fillStroke} strokeWidth={stroke} fill="none" />
         ) : p > 0.004 ? (
-          <Path d={arc(c, c, r, 0, deg)} stroke={color.gauge} strokeWidth={stroke} strokeLinecap="round" fill="none" />
+          <Path d={arc(c, c, r, 0, deg)} stroke={fillStroke} strokeWidth={stroke} strokeLinecap="round" fill="none" />
         ) : null}
         <Circle cx={c} cy={c} r={r * 0.66} stroke={color.rim} strokeWidth={2} fill="none" />
         {!over && p > 0.004 && (
