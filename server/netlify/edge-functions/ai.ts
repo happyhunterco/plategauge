@@ -1,25 +1,26 @@
-import { extractJson, foodsFromAi, labelFromAi, PROMPTS, recipesFromAi } from '../../../shared/prompts';
-
 /**
- * AI food analysis, as a Netlify EDGE function rather than a regular one.
+ * AI food analysis — Netlify EDGE function (Deno runtime).
  *
- * Why: regular Netlify functions get killed after 10 seconds. A real photo of a meal
- * sent to Claude for analysis routinely takes longer than that, so every photo/label
- * scan was silently timing out. Edge functions don't count time spent waiting on a
- * fetch() response against their execution limit, only actual CPU time — so the
- * ~15-25s a vision call can take is fine here (response header timeout is 40s).
- * This route replaces the old server/netlify/functions/ai.ts, which is now unused.
+ * Two reasons this is an edge function and not a regular one:
+ *  1. Regular Netlify functions are killed after 10s; a real vision call to Claude often
+ *     takes longer, so every photo/label scan was silently timing out.
+ *  2. Edge functions don't count time spent awaiting fetch() against their limit.
+ *
+ * IMPORTANT: the Deno runtime requires file extensions on relative imports, which our
+ * Node-side shared/ modules don't use. So this file imports NOTHING from shared/ — it
+ * builds the prompt inline and returns Claude's RAW text/JSON. The app (src/services/ai.ts)
+ * already normalizes raw model JSON via foodsFromAi/labelFromAi, so no parsing logic is
+ * duplicated here. Keep the prompts here in sync with shared/prompts.ts.
  */
 
 const CORS = {
   'access-control-allow-origin': '*',
   'access-control-allow-headers': 'content-type, authorization, x-app-key',
-  'access-control-allow-methods': 'GET, POST, OPTIONS',
+  'access-control-allow-methods': 'POST, OPTIONS',
 };
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json', 'cache-control': 'no-store', ...CORS } });
 
-// Netlify's Edge runtime (Deno) exposes env vars through this global, not process.env.
 declare const Netlify: { env: { get(key: string): string | undefined } };
 const env = (k: string) => {
   try {
@@ -27,6 +28,27 @@ const env = (k: string) => {
   } catch {
     return '';
   }
+};
+
+const MACROS = '"calories": number, "protein": number, "carbs": number, "fat": number, "fiber": number|null, "sugar": number|null, "sodium": number|null';
+const BASE = `You are PlateGauge's nutrition engine. Estimate like a registered dietitian using USDA FoodData Central reference values and realistic US portions. Reply with ONLY one JSON object: no prose, no markdown. Macros in grams, sodium in mg, calories in kcal, all for the serving described. Round to whole numbers. Use null when you can't estimate a value.`;
+
+const PROMPTS: Record<string, string> = {
+  photo: `${BASE}
+Look at the photo and identify every distinct food and drink that is actually visible. Describe what you see, not what is typical: name the real dish (e.g. "pepperoni pizza slice", "pad thai"), not a generic stand-in.
+Estimate each portion from visual cues (plate ~10-11 in, utensils, hands, packaging). Include visible sauces, dressings and oils as separate items when they matter.
+Shape: {"foods":[{"name": string, "serving": string, "grams": number|null, ${MACROS}, "confidence": "high"|"medium"|"low", "low": number, "high": number}], "notes": string}
+"low"/"high" are a realistic calorie range for that item. If the image has no food, return {"foods": [], "notes": "No food found"}.`,
+  label: `${BASE}
+The photo is a Nutrition Facts label. Read the numbers exactly as printed; do not estimate. If a value isn't printed, use null.
+Shape: {"name": string|null, "brand": string|null, "serving": string, "grams": number|null, ${MACROS}, "readable": boolean}
+Set "readable" false if the label is blurry or cut off.`,
+  text: `${BASE}
+Split the description into individual foods. Use the amounts given; otherwise assume one typical serving.
+Shape: {"foods":[{"name": string, "serving": string, "grams": number|null, ${MACROS}, "confidence": "high"|"medium"|"low", "low": number, "high": number}]}`,
+  kitchen: `${BASE}
+Create 2-3 recipes that mainly use the pantry items, fit the remaining budget per serving, and take under 30 minutes. Assume salt, pepper, oil and basic spices.
+Shape: {"recipes":[{"title": string, "minutes": number, "servings": number, "calories": number, "protein": number, "carbs": number, "fat": number, "ingredients": string[], "steps": string[], "missing": string[]}]}`,
 };
 
 type Content = { type: 'text'; text: string } | { type: 'image'; source: { type: 'base64'; media_type: string; data: string } };
@@ -43,14 +65,16 @@ async function claude(system: string, content: Content[], maxTokens = 1500): Pro
     throw Object.assign(new Error('upstream'), { status: 502 });
   }
   const data = (await res.json()) as { content?: { type: string; text?: string }[] };
-  return (data.content ?? [])
-    .filter((b) => b.type === 'text')
-    .map((b) => b.text)
-    .join('');
+  return (data.content ?? []).filter((b) => b.type === 'text').map((b) => b.text).join('');
 }
 
-// Best-effort per-isolate rate limit. Edge isolates are short-lived and regional, so this
-// is a soft speed bump, not a hard guarantee — good enough alongside the app-level consent gate.
+/** Pull the JSON object out of the model's reply. Mirrors extractJson in shared/prompts.ts. */
+function extractJson(text: string): Record<string, unknown> {
+  const clean = text.replace(/```json|```/g, '');
+  const m = clean.match(/\{[\s\S]*\}/);
+  return JSON.parse(m ? m[0] : clean);
+}
+
 const hits = new Map<string, { n: number; t: number }>();
 function tooMany(ip: string, perMinute = 20) {
   const now = Date.now();
@@ -86,32 +110,25 @@ export default async (req: Request) => {
       const image = str(body.image, 8_000_000);
       if (!image) return json({ error: 'missing_image' }, 400);
       const note = str(body.note, 300);
-      const text = await claude(PROMPTS[task as 'photo' | 'label'], [
+      const text = await claude(PROMPTS[task], [
         { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: image } },
         { type: 'text', text: task === 'photo' ? `Analyze this meal.${note ? ` The person says: ${note}` : ''}` : 'Read this nutrition label.' },
       ]);
       const raw = extractJson(text);
-      return task === 'photo' ? json({ foods: foodsFromAi(raw, 'photo_estimate'), notes: str(raw.notes, 300) }) : json({ label: labelFromAi(raw) });
+      // Return raw model JSON; the app normalizes it (foodsFromAi / labelFromAi).
+      return task === 'photo' ? json({ foods: raw.foods ?? [], notes: raw.notes ?? '' }) : json({ label: raw });
     }
     if (task === 'text') {
       const text = await claude(PROMPTS.text, [{ type: 'text', text: `What I ate: ${str(body.text, 1000)}` }]);
-      return json({ foods: foodsFromAi(extractJson(text), 'estimate') });
+      return json({ foods: extractJson(text).foods ?? [] });
     }
     if (task === 'kitchen') {
       const left = body.left as Record<string, number> | undefined;
-      const pantry = Array.isArray(body.pantry)
-        ? body.pantry
-            .map((p) => str(p, 60))
-            .slice(0, 60)
-            .join(', ')
-        : '';
+      const pantry = Array.isArray(body.pantry) ? body.pantry.map((p) => str(p, 60)).slice(0, 60).join(', ') : '';
       const text = await claude(PROMPTS.kitchen, [
-        {
-          type: 'text',
-          text: `Remaining today: ${left?.calories ?? '?'} kcal, ${left?.protein ?? '?'}g protein.\nPantry: ${pantry}\nIn the mood for: ${str(body.prompt, 300) || 'anything'}`,
-        },
+        { type: 'text', text: `Remaining today: ${left?.calories ?? '?'} kcal, ${left?.protein ?? '?'}g protein.\nPantry: ${pantry}\nIn the mood for: ${str(body.prompt, 300) || 'anything'}` },
       ]);
-      return json({ recipes: recipesFromAi(extractJson(text)) });
+      return json({ recipes: extractJson(text).recipes ?? [] });
     }
     return json({ error: 'unknown_task' }, 400);
   } catch (e) {
