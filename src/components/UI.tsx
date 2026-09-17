@@ -1,22 +1,13 @@
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import type { ComponentProps, ReactNode } from 'react';
-import {
-  ActivityIndicator,
-  Platform,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  type TextInputProps,
-  View,
-  type ViewStyle,
-} from 'react-native';
+import { forwardRef, useState, type ComponentProps, type ReactNode } from 'react';
+import { ActivityIndicator, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, type TextInputProps, View, type ViewStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { fmt } from '../nutrition';
+import { fmt } from '../hooks';
+import { fieldLayout } from './fieldLayout';
+import { column, useWide } from '../layout';
 import { color, font, radius, space, type } from '../theme';
-import type { Macros } from '../types';
+type Macros = { calories: number; protein: number; carbs: number; fat: number };
 
 export type IconName = ComponentProps<typeof Ionicons>['name'];
 
@@ -45,19 +36,22 @@ export function Screen({
   top?: boolean;
 }) {
   const insets = useSafeAreaInsets();
+  const wide = useWide();
   const header = title ? (
     <View style={styles.header}>
       <View style={{ flex: 1 }}>
-        <Text style={type.hero} accessibilityRole="header">{title}</Text>
+        <Text style={type.title} accessibilityRole="header">
+          {title}
+        </Text>
         {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
       </View>
       {right}
     </View>
   ) : null;
-  const pad = { paddingTop: top ? insets.top + space.m : space.m, paddingBottom: 120 };
+  const pad = { paddingTop: top ? insets.top + space.m : space.m, paddingBottom: wide ? 48 : 120 };
   if (!scroll)
     return (
-      <View style={[{ flex: 1, backgroundColor: bg }, pad]}>
+      <View style={[{ flex: 1, backgroundColor: bg }, pad, column]}>
         {header}
         {children}
       </View>
@@ -65,9 +59,10 @@ export function Screen({
   return (
     <ScrollView
       style={{ flex: 1, backgroundColor: bg }}
-      contentContainerStyle={pad}
+      contentContainerStyle={[pad, column]}
       keyboardShouldPersistTaps="handled"
-      keyboardDismissMode="on-drag"
+      keyboardDismissMode="interactive"
+      automaticallyAdjustKeyboardInsets
     >
       {header}
       {children}
@@ -123,15 +118,39 @@ export function Button({
   );
 }
 
-export function Field(props: TextInputProps & { icon?: IconName }) {
-  const { icon, style, ...rest } = props;
-  return (
-    <View style={[styles.field, style as ViewStyle]}>
-      {icon ? <Ionicons name={icon} size={18} color={color.faint} /> : null}
-      <TextInput placeholderTextColor={color.faint} style={styles.input} {...rest} />
+export const Field = forwardRef<TextInput, TextInputProps & { icon?: IconName; label?: string; suffix?: string }>(function Field(props, ref) {
+  const { icon, style, label, suffix, onFocus, onBlur, ...rest } = props;
+  const [focused, setFocused] = useState(false);
+  const l = fieldLayout(focused);
+  const box = (
+    <View style={[styles.field, l.container, style as ViewStyle]}>
+      {icon ? <Ionicons name={icon} size={18} color={focused ? color.gauge : color.faint} /> : null}
+      <TextInput
+        ref={ref}
+        placeholderTextColor={color.faint}
+        style={[styles.input, l.input]}
+        accessibilityLabel={rest.accessibilityLabel ?? label}
+        onFocus={(e) => {
+          setFocused(true);
+          onFocus?.(e);
+        }}
+        onBlur={(e) => {
+          setFocused(false);
+          onBlur?.(e);
+        }}
+        {...rest}
+      />
+      {suffix ? <Text style={styles.suffix}>{suffix}</Text> : null}
     </View>
   );
-}
+  if (!label) return box;
+  return (
+    <View style={{ minWidth: 0, flex: (style as ViewStyle | undefined)?.flex }}>
+      <Text style={styles.fieldLabel}>{label}</Text>
+      {box}
+    </View>
+  );
+});
 
 export function Segmented<T extends string | number>({
   value,
@@ -188,7 +207,9 @@ export function Section({ title, action, children, style }: { title?: string; ac
     <View style={[{ marginTop: space.xl, paddingHorizontal: space.l }, style]}>
       {title ? (
         <View style={styles.sectionHead}>
-          <Text style={type.section} accessibilityRole="header">{title}</Text>
+          <Text style={type.section} accessibilityRole="header">
+            {title}
+          </Text>
           {action}
         </View>
       ) : null}
@@ -227,8 +248,14 @@ export function Row({
       style={({ pressed }) => [styles.row, !last && styles.rowLine, pressed && { backgroundColor: color.wash }]}
     >
       <View style={{ flex: 1, paddingRight: space.m }}>
-        <Text style={styles.rowTitle} numberOfLines={2}>{title}</Text>
-        {detail ? <Text style={styles.rowDetail} numberOfLines={2}>{detail}</Text> : null}
+        <Text style={styles.rowTitle} numberOfLines={2}>
+          {title}
+        </Text>
+        {detail ? (
+          <Text style={styles.rowDetail} numberOfLines={2}>
+            {detail}
+          </Text>
+        ) : null}
       </View>
       {value ? <Text style={styles.rowValue}>{value}</Text> : null}
       {right}
@@ -236,8 +263,7 @@ export function Row({
   );
 }
 
-export const macroLine = (m: Macros, qty = 1) =>
-  `${fmt(m.protein * qty)}P   ${fmt(m.carbs * qty)}C   ${fmt(m.fat * qty)}F`;
+export const macroLine = (m: Macros, qty = 1) => `${fmt(m.protein * qty)}P   ${fmt(m.carbs * qty)}C   ${fmt(m.fat * qty)}F`;
 
 export function MacroBars({ eaten, goals }: { eaten: Macros; goals: Macros }) {
   const items = [
@@ -341,15 +367,14 @@ const styles = StyleSheet.create({
   },
   btnText: { fontSize: 16, fontWeight: '600' },
   field: {
-    flexDirection: 'row',
-    alignItems: 'center',
     gap: 8,
     backgroundColor: color.wash,
     borderRadius: radius.m,
-    paddingHorizontal: space.m + 2,
-    minHeight: 48,
+    paddingHorizontal: space.m,
   },
-  input: { flex: 1, fontSize: 16, color: color.ink, paddingVertical: 12, outlineWidth: 0 },
+  input: { fontSize: 16, color: color.ink, paddingVertical: 11 },
+  fieldLabel: { fontSize: 13, color: color.sub, marginBottom: 6 },
+  suffix: { fontSize: 14, color: color.sub },
   seg: { flexDirection: 'row', backgroundColor: color.wash, borderRadius: radius.s + 2, padding: 3 },
   segItem: { flex: 1, height: 34, alignItems: 'center', justifyContent: 'center', borderRadius: radius.s },
   segOn: {

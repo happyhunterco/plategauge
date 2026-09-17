@@ -23,8 +23,8 @@ export const prettyDay = (k: string) => {
   return fromKey(k).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
 };
 
-export const longDate = (k: string) =>
-  fromKey(k).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+export const longDate = (k: string) => fromKey(k).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+export const timeOf = (ms: number) => new Date(ms).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
 
 export const mealForNow = () => {
   const h = new Date().getHours();
@@ -32,4 +32,11 @@ export const mealForNow = () => {
   if (h < 15) return 'lunch' as const;
   if (h < 21) return 'dinner' as const;
   return 'snack' as const;
+};
+
+/** Monday-first week containing the day */
+export const weekOf = (k: string) => {
+  const d = fromKey(k);
+  const offset = (d.getDay() + 6) % 7;
+  return Array.from({ length: 7 }, (_, i) => shiftKey(k, i - offset));
 };

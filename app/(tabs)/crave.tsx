@@ -1,32 +1,47 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { crave } from '../../src/api';
-import { IdeaList } from '../../src/components/Ideas';
-import { Button, Chip, ErrorNote, Field, Screen, Section, tap, type IconName } from '../../src/components/UI';
-import { useLeft } from '../../src/hooks';
-import { fmt } from '../../src/nutrition';
-import { color, font, space, type } from '../../src/theme';
-import type { Idea } from '../../src/types';
+import { StyleSheet, Text, View } from 'react-native';
+import type { CraveResult, ExactResult } from '../../shared/crave';
+import type { FitPlan } from '../../shared/customize';
+import type { FoodItem, Selection } from '../../shared/food';
+import type { Intent } from '../../shared/intent';
+import { restaurantById } from '../../shared/restaurants';
+import type { Scored } from '../../shared/rank';
+import { useHandoff } from '../../src/building';
+import { Card, Choices, DevDataBanner, SkeletonRows, SourceLine, TopBar } from '../../src/components/Kit';
+import { Button, Chip, ErrorNote, Field, macroLine, Screen, Section } from '../../src/components/UI';
+import { fmt, useLeftToday } from '../../src/hooks';
+import { crave, customize, dataMode } from '../../src/services/foods';
+import { useStore } from '../../src/store';
+import { color, font, space } from '../../src/theme';
 
-const MOODS = ['Sweet', 'Salty', 'Crunchy', 'Something warm', 'High protein', 'Late-night snack'];
+const EXAMPLES = ['Culver’s cheeseburger', 'Olive Garden lasagna', 'Something salty and crunchy', 'Sweet and cold'];
 
 export default function Crave() {
   const router = useRouter();
-  const left = useLeft();
+  const left = useLeftToday();
+  const profile = useStore((s) => s.profile);
+  const stage = useStore((s) => s.stage);
+  const setBuild = useHandoff((s) => s.setBuild);
   const [text, setText] = useState('');
-  const [moods, setMoods] = useState<string[]>([]);
-  const [ideas, setIdeas] = useState<Idea[] | null>(null);
+  const [answers, setAnswers] = useState<Record<string, Partial<Intent>>>({});
+  const [result, setResult] = useState<CraveResult | null>(null);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
+  const [showSimilar, setShowSimilar] = useState(false);
+  const [opening, setOpening] = useState<string | null>(null);
 
-  const prompt = [text.trim(), ...moods].filter(Boolean).join(', ');
-  const run = async () => {
+  const prefs = { restrictions: profile?.restrictions ?? [], allergies: profile?.allergies ?? [] };
+  const favorites = (profile?.favoriteRestaurants ?? []).map((id) => restaurantById(id)).filter(Boolean);
+
+  const run = async (t = text, a = answers) => {
+    if (!t.trim()) return;
     setErr('');
     setBusy(true);
+    setShowSimilar(false);
     try {
-      setIdeas(await crave(prompt, left));
+      setResult(await crave({ text: t.trim(), left, prefs, answers: a }));
     } catch (e) {
       setErr((e as Error).message);
     } finally {
@@ -34,86 +49,354 @@ export default function Crave() {
     }
   };
 
-  const door = (icon: IconName, title: string, body: string, to: '/menus' | '/kitchen') => (
-    <Pressable
-      style={({ pressed }) => [styles.door, pressed && { backgroundColor: color.wash }]}
-      onPress={() => {
-        tap();
-        router.push({ pathname: to, params: { q: prompt } });
-      }}
-      accessibilityRole="button"
-    >
-      <View style={styles.doorIcon}>
-        <Ionicons name={icon} size={20} color={color.ink} />
-      </View>
-      <Text style={styles.doorTitle}>{title}</Text>
-      <Text style={styles.doorBody}>{body}</Text>
-    </Pressable>
-  );
+  const answer = (id: string, patch: Partial<Intent>) => {
+    const next = { ...answers, [id]: patch };
+    setAnswers(next);
+    run(text, next);
+  };
+
+  const logItem = (item: FoodItem, changes?: string[], customization?: { title: string; selection: Selection }) => {
+    stage([{ item, qty: 1, via: 'crave', changes, customization }]);
+    router.push('/review');
+  };
+
+  const openExact = (ex: ExactResult, selection?: Selection) => {
+    setBuild({ custom: ex.custom, selection: selection ?? ex.selection, via: 'crave' });
+    router.push('/build');
+  };
+
+  const openSimilar = async (s: Scored) => {
+    setOpening(s.item.id);
+    try {
+      setBuild({ custom: await customize(s.item, text), via: 'crave' });
+      router.push('/build');
+    } catch (e) {
+      setErr((e as Error).message);
+    } finally {
+      setOpening(null);
+    }
+  };
+
+  const ex = result?.exact ?? null;
+  const similarVisible = !!result && (result.showSimilar || showSimilar);
 
   return (
-    <Screen>
-      <View style={styles.hero}>
-        <Text style={styles.headline} accessibilityRole="header">What’re ya{'\n'}hungry for?</Text>
-        <Text style={styles.budget}>
-          {fmt(left.calories)} cal and {fmt(left.protein)}g protein left today
+    <View style={{ flex: 1, backgroundColor: '#fff' }}>
+      <TopBar title="Crave" />
+      <Screen top={false}>
+        <View style={styles.hero}>
+          <Text style={styles.headline} accessibilityRole="header">
+            What’re ya hungry for?
+          </Text>
+          <Text style={styles.budget}>
+            {fmt(left.calories)} cal and {fmt(left.protein)}g protein left today
+          </Text>
+        </View>
+        {dataMode === 'development' ? (
+          <DevDataBanner text="Development data: Culver’s, Olive Garden and a few snacks. Connect the server for every restaurant." />
+        ) : null}
+
+        <View style={styles.pad}>
+          <Field
+            icon="restaurant-outline"
+            placeholder="A Culver’s double cheeseburger, no mayo"
+            value={text}
+            onChangeText={(t) => {
+              setText(t);
+              setAnswers({});
+            }}
+            returnKeyType="search"
+            onSubmitEditing={() => run()}
+            accessibilityLabel="What you're hungry for"
+          />
+          {!result && !busy ? (
+            <View style={styles.chips}>
+              {favorites.map((r) => (
+                <Chip key={r!.id} label={r!.name} icon="star-outline" onPress={() => setText(`${r!.name} `)} />
+              ))}
+              {EXAMPLES.map((e) => (
+                <Chip
+                  key={e}
+                  label={e}
+                  onPress={() => {
+                    setText(e);
+                    run(e, {});
+                  }}
+                />
+              ))}
+            </View>
+          ) : null}
+          {err ? <ErrorNote text={err} /> : null}
+          <Button label="Find it" icon="search" onPress={() => run()} loading={busy} disabled={!text.trim()} />
+        </View>
+
+        {busy ? (
+          <Section>
+            <SkeletonRows n={3} />
+          </Section>
+        ) : null}
+
+        {result && !busy ? (
+          <>
+            {result.question ? (
+              <Section>
+                <Choices
+                  prompt={result.question.prompt}
+                  options={result.question.options.map((o) => o.label)}
+                  onPick={(i) => answer(result.question!.id, result.question!.options[i].patch)}
+                />
+              </Section>
+            ) : null}
+
+            {result.notFound ? (
+              <Section>
+                <Card>
+                  <Text style={styles.cardTitle}>{result.notFound}</Text>
+                  <Text style={styles.muted}>Try the exact menu name, or log it another way. We won’t make up the numbers.</Text>
+                  <View style={styles.rowBtns}>
+                    <Button
+                      label="Search"
+                      kind="secondary"
+                      icon="search"
+                      onPress={() => router.navigate({ pathname: '/log', params: { q: result.intent.food } })}
+                      style={styles.smallBtn}
+                    />
+                    <Button
+                      label="Describe it"
+                      kind="secondary"
+                      icon="chatbubble-ellipses-outline"
+                      onPress={() => router.navigate({ pathname: '/log', params: { mode: 'type' } })}
+                      style={styles.smallBtn}
+                    />
+                  </View>
+                </Card>
+              </Section>
+            ) : null}
+
+            {ex ? (
+              <Section title="Exact match">
+                <ExactCard
+                  ex={ex}
+                  left={left}
+                  onLog={() =>
+                    logItem(
+                      { ...ex.item, nutrients: ex.computed.nutrients, source: { ...ex.item.source, quality: ex.computed.quality } },
+                      ex.computed.summary,
+                      { title: ex.custom.title, selection: ex.selection },
+                    )
+                  }
+                  onCustomize={() => openExact(ex)}
+                />
+              </Section>
+            ) : null}
+
+            {ex && !ex.fitsAsIs && ex.plans.length ? (
+              <Section title="Make it fit">
+                <View style={{ gap: space.m }}>
+                  {ex.plans.map((p) => (
+                    <PlanCard
+                      key={p.id}
+                      plan={p}
+                      left={left}
+                      onLog={() =>
+                        logItem(
+                          { ...ex.item, nutrients: p.computed.nutrients, source: { ...ex.item.source, quality: p.computed.quality } },
+                          p.computed.summary,
+                          { title: ex.custom.title, selection: p.selection },
+                        )
+                      }
+                      onCustomize={() => openExact(ex, p.selection)}
+                    />
+                  ))}
+                </View>
+              </Section>
+            ) : null}
+            {ex && !ex.fitsAsIs && !ex.plans.length ? (
+              <Section>
+                <Text style={styles.muted}>
+                  No change we know of gets this under what’s left today. Similar options are below, or you can still log it as ordered.
+                </Text>
+              </Section>
+            ) : null}
+
+            {similarVisible && result.similar.length ? (
+              <Section title={ex ? 'Similar options' : 'Matches your craving'}>
+                <View style={{ gap: space.m }}>
+                  {result.similar.map((s) => (
+                    <SimilarCard
+                      key={s.item.id}
+                      s={s}
+                      left={left}
+                      loading={opening === s.item.id}
+                      onLog={() => logItem(s.item)}
+                      onCustomize={() => openSimilar(s)}
+                    />
+                  ))}
+                </View>
+              </Section>
+            ) : null}
+            {!similarVisible && result.similar.length ? (
+              <Section>
+                <Button label="Show similar options" kind="ghost" icon="chevron-down" onPress={() => setShowSimilar(true)} />
+              </Section>
+            ) : null}
+            {!result.exact && !result.similar.length && !result.question && !result.notFound ? (
+              <Section>
+                <Text style={styles.muted}>Nothing matched yet. Try naming a food or a restaurant.</Text>
+              </Section>
+            ) : null}
+            {result.blocked.length ? (
+              <Section>
+                <Text style={styles.muted}>
+                  {result.blocked.length} option{result.blocked.length > 1 ? 's were' : ' was'} hidden for your dietary settings.
+                </Text>
+              </Section>
+            ) : null}
+          </>
+        ) : null}
+
+        <Section title="Eating in?">
+          <Card onPress={() => router.push({ pathname: '/kitchen', params: { q: text } })} label="Cook with what you have">
+            <View style={styles.door}>
+              <Ionicons name="basket-outline" size={22} color={color.ink} />
+              <View style={{ flex: 1 }}>
+                <Text style={styles.cardTitle}>Cook with what you have</Text>
+                <Text style={styles.muted}>Meals from your pantry that fit today</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={18} color={color.faint} />
+            </View>
+          </Card>
+        </Section>
+      </Screen>
+    </View>
+  );
+}
+
+type Left = { calories: number; protein: number; carbs: number; fat: number };
+
+function FitLine({ cal, left }: { cal: number; left: Left }) {
+  const after = left.calories - cal;
+  return (
+    <Text style={[styles.fit, after < -50 && { color: color.needle }]}>
+      {after >= -50 ? `Fits. ${fmt(Math.max(after, 0))} cal left after` : `${fmt(-after)} cal over what’s left`}
+    </Text>
+  );
+}
+
+function ExactCard({ ex, left, onLog, onCustomize }: { ex: ExactResult; left: Left; onLog: () => void; onCustomize: () => void }) {
+  const n = ex.computed.nutrients;
+  return (
+    <Card style={styles.exact}>
+      <View style={styles.badgeRow}>
+        <View style={styles.exactBadge}>
+          <Ionicons name="checkmark" size={12} color="#fff" />
+          <Text style={styles.exactBadgeText}>Exact match</Text>
+        </View>
+      </View>
+      <Text style={styles.itemName}>{ex.item.name}</Text>
+      {ex.item.brand ? <Text style={styles.muted}>{ex.item.brand}</Text> : null}
+      {ex.computed.summary.length ? <Text style={styles.changes}>{ex.computed.summary.join(', ')}</Text> : null}
+      <View style={styles.numbers}>
+        <Text style={styles.bigCal}>
+          {fmt(n.calories)}
+          <Text style={styles.unit}> cal</Text>
+        </Text>
+        <Text style={styles.muted}>
+          {macroLine(n)}
+          {n.sodium != null ? `   ${fmt(n.sodium)}mg sodium` : ''}
         </Text>
       </View>
-
-      <View style={{ paddingHorizontal: space.l, gap: space.m }}>
-        <Field
-          placeholder="Something cold and sweet that isn’t ice cream"
-          value={text}
-          onChangeText={setText}
-          multiline
-          style={{ minHeight: 84, alignItems: 'flex-start' }}
-          accessibilityLabel="Describe your craving"
+      <SourceLine source={{ ...ex.item.source, quality: ex.computed.quality }} serving={ex.item.serving.description} />
+      <FitLine cal={n.calories} left={left} />
+      {ex.conflict ? <Text style={styles.warn}>{ex.conflict}. Check ingredients with the restaurant.</Text> : null}
+      <View style={styles.rowBtns}>
+        <Button
+          label={ex.fitsAsIs ? 'Log this' : 'Log as ordered'}
+          icon="add"
+          kind={ex.fitsAsIs ? 'primary' : 'secondary'}
+          onPress={onLog}
+          style={styles.smallBtn}
         />
-        <View style={styles.chips}>
-          {MOODS.map((m) => (
-            <Chip
-              key={m}
-              label={m}
-              on={moods.includes(m)}
-              onPress={() => setMoods(moods.includes(m) ? moods.filter((x) => x !== m) : [...moods, m])}
-            />
-          ))}
-        </View>
-        {err ? <ErrorNote text={err} /> : null}
-        <Button label="Find ideas" icon="sparkles" onPress={run} loading={busy} disabled={!prompt} />
+        <Button label="Customize" icon="options-outline" kind="secondary" onPress={onCustomize} style={styles.smallBtn} />
       </View>
+    </Card>
+  );
+}
 
-      {ideas && (
-        <Section title="Ideas that fit">
-          <IdeaList ideas={ideas} source="crave" />
-        </Section>
-      )}
+function PlanCard({ plan, left, onLog, onCustomize }: { plan: FitPlan; left: Left; onLog: () => void; onCustomize: () => void }) {
+  const n = plan.computed.nutrients;
+  return (
+    <Card>
+      <Text style={styles.itemName}>{plan.title}</Text>
+      <View style={{ gap: 4, marginTop: 6 }}>
+        {plan.changes.map((c) => (
+          <Text key={`${c.groupId}${c.value}`} style={styles.why}>
+            • {c.label}: {c.why}
+          </Text>
+        ))}
+      </View>
+      <Text style={[styles.bigCal, { fontSize: 22, marginTop: space.s }]}>
+        {fmt(n.calories)}
+        <Text style={styles.unit}> cal {macroLine(n)}</Text>
+      </Text>
+      <FitLine cal={n.calories} left={left} />
+      {plan.computed.estimated ? <Text style={styles.est}>Includes estimated values</Text> : null}
+      <View style={styles.rowBtns}>
+        <Button label="Log this version" icon="add" onPress={onLog} style={styles.smallBtn} />
+        <Button label="Adjust" icon="options-outline" kind="secondary" onPress={onCustomize} style={styles.smallBtn} />
+      </View>
+    </Card>
+  );
+}
 
-      <Section title="Where are you eating?">
-        <View style={styles.doors}>
-          {door('restaurant-outline', 'Menus', 'Best orders at a restaurant', '/menus')}
-          {door('basket-outline', 'Kitchen', 'Meals from what you have', '/kitchen')}
+function SimilarCard({ s, left, loading, onLog, onCustomize }: { s: Scored; left: Left; loading: boolean; onLog: () => void; onCustomize: () => void }) {
+  const n = s.item.nutrients;
+  return (
+    <Card>
+      <View style={styles.simHead}>
+        <View style={{ flex: 1, minWidth: 0 }}>
+          <Text style={styles.itemName}>{s.item.name}</Text>
+          {s.item.brand ? <Text style={styles.muted}>{s.item.brand}</Text> : null}
         </View>
-      </Section>
-    </Screen>
+        <Text style={styles.simCal}>{fmt(n.calories)}</Text>
+      </View>
+      <Text style={styles.muted}>{macroLine(n)}</Text>
+      {s.reasons.length ? <Text style={styles.reasons}>{s.reasons.slice(0, 3).join(' · ')}</Text> : null}
+      <SourceLine source={s.item.source} serving={s.item.serving.description} />
+      <FitLine cal={n.calories} left={left} />
+      <View style={styles.rowBtns}>
+        <Button label="Log" icon="add" kind="secondary" onPress={onLog} style={styles.smallBtn} />
+        <Button label="Customize" icon="options-outline" kind="secondary" loading={loading} onPress={onCustomize} style={styles.smallBtn} />
+      </View>
+    </Card>
   );
 }
 
 const styles = StyleSheet.create({
-  hero: { paddingHorizontal: space.l, paddingTop: space.l, paddingBottom: space.xl },
-  headline: { ...type.hero, fontSize: 44, lineHeight: 48, letterSpacing: -1.6 },
-  budget: { color: color.sub, fontSize: 15, marginTop: space.m },
+  hero: { paddingHorizontal: space.l, paddingTop: space.s, paddingBottom: space.m },
+  headline: { fontFamily: font.displayBold, fontSize: 30, lineHeight: 34, letterSpacing: -1, color: color.ink },
+  budget: { color: color.sub, fontSize: 14, marginTop: 4 },
+  pad: { paddingHorizontal: space.l, gap: space.m, marginTop: space.s },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: space.s },
-  doors: { flexDirection: 'row', gap: space.m },
-  door: {
-    flex: 1,
-    padding: space.l,
-    borderRadius: 16,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: color.line,
-    backgroundColor: '#fff',
-  },
-  doorIcon: { width: 40, height: 40, borderRadius: 20, backgroundColor: color.wash, alignItems: 'center', justifyContent: 'center' },
-  doorTitle: { fontFamily: font.display, fontSize: 17, color: color.ink, marginTop: space.m },
-  doorBody: { fontSize: 13, color: color.sub, marginTop: 2 },
+  cardTitle: { fontFamily: font.display, fontSize: 16, color: color.ink },
+  muted: { fontSize: 13, color: color.sub, marginTop: 2, lineHeight: 18 },
+  rowBtns: { flexDirection: 'row', gap: space.s, marginTop: space.m, flexWrap: 'wrap' },
+  smallBtn: { height: 44, paddingHorizontal: space.m, flexGrow: 1 },
+  exact: { borderColor: color.gauge, borderWidth: 1.5 },
+  badgeRow: { flexDirection: 'row', marginBottom: 6 },
+  exactBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: color.gauge, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 3 },
+  exactBadgeText: { color: '#fff', fontSize: 12, fontWeight: '700' },
+  itemName: { fontFamily: font.display, fontSize: 18, color: color.ink },
+  changes: { fontSize: 13, color: color.ink, marginTop: 4 },
+  numbers: { marginTop: space.s },
+  bigCal: { fontFamily: font.displayBold, fontSize: 30, color: color.ink, fontVariant: ['tabular-nums'] },
+  unit: { fontFamily: font.displayMed, fontSize: 14, color: color.sub },
+  fit: { fontSize: 13, fontWeight: '600', color: color.gauge, marginTop: 6 },
+  warn: { fontSize: 13, color: color.danger, marginTop: 6 },
+  why: { fontSize: 13, color: color.ink, lineHeight: 18 },
+  est: { fontSize: 11, color: '#9A5B00', marginTop: 4 },
+  simHead: { flexDirection: 'row', gap: space.m, alignItems: 'flex-start' },
+  simCal: { fontFamily: font.display, fontSize: 18, color: color.gauge },
+  reasons: { fontSize: 12, color: color.ink, marginTop: 4 },
+  door: { flexDirection: 'row', alignItems: 'center', gap: space.m },
 });

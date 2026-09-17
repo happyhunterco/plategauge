@@ -1,0 +1,30 @@
+# One Netlify site for the web app + API.
+# Base directory: repository root. The API-only site config in server/netlify.toml still works on its own.
+[build]
+  command = "npm run build:web"
+  publish = "dist"
+  functions = "server/netlify/functions"
+
+[build.environment]
+  NODE_VERSION = "22"
+
+[functions]
+  node_bundler = "esbuild"
+
+# Single-page app: every non-API route serves the app.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "camera=(self), geolocation=()"
+
+[[headers]]
+  for = "/sw.js"
+  [headers.values]
+    Cache-Control = "no-cache"

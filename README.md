@@ -1,82 +1,81 @@
 # PlateGauge
 
-**What’re ya hungry for?**
+**What’re ya hungry for?** A calorie and macro tracker that tells you how to make a craving fit.
 
-Calorie and macro tracker for iOS, built with Expo (SDK 57) and Expo Router.
+Expo SDK 57 · React Native 0.86 · Expo Router · Zustand · Supabase auth · Netlify Functions
 
-| Feature | Where | What it does |
-|---|---|---|
-| Today | Tab 1 | Plate-gauge dial, macros, meals by time of day, day switching |
-| Log | Tab 2 | Search common + packaged foods, describe a meal in words, quick add |
-| Scan | Center tab | Photograph a plate (AI estimate) or scan a barcode (Open Food Facts) |
-| Crave | Tab 4 | Say what you’re hungry for, get ideas that fit what’s left today |
-| Menus | From Crave | Best orders at a named restaurant within your budget |
-| Kitchen | From Crave | Saved pantry → recipes that fit your budget |
-| Progress | Tab 5 | Streak, weekly calories vs goal, weight trend, goal editing, data controls |
+## What’s in it
 
-Everything is stored on-device (AsyncStorage). No accounts.
+| Area | What it does |
+|---|---|
+| Today | Week strip with logged-day dots, plate-gauge dial, eaten / budget / left, macros with grams left, meals, one swipeable panel (fiber, sugar, sodium, Daily Balance · steps, activity, water), recently-logged timeline with undo |
+| Log | Search across providers with filters (restaurants, brands, basic foods, brand name), pagination, recents, saved foods, your own foods; Describe (AI); Quick add |
+| + button | One sheet: scan barcode, scan meal, search, describe, quick add, create food, create recipe, water, weight, activity |
+| Scan | Meal photo (AI, items with calorie ranges), barcode (every connected database, every barcode format, flashlight, manual entry), nutrition label (AI reads it into Create food) |
+| Product | Serving picker, live totals, **Label Score 0–10** (Nutri-Score 6 + processing 2 + additives 2, with the breakdown) |
+| Crave | Exact item first → “Make it fit” versions → similar foods of the same type. One-tap follow-up questions. Dietary screening |
+| Build It | Data-driven customizer for any food; restaurant options only when the restaurant offers them; live calories, macros, sodium and what’s left after |
+| Progress | Streaks, days on target, weight trend vs goal, calories vs goal, macro averages |
+| Profile | Body stats, goals and pace (with safety warnings), activity-budget setting, food preferences, Daily Balance explained, reminders, AI consent, account (password, sign out, delete) |
+
+Every number carries a source label: Verified restaurant, Label data, Database, You, Estimate, Photo estimate, or Development data.
 
 ## Run it
 
 ```bash
 npm install
-npx expo start          # press i for the iOS simulator
+cp .env.example .env        # defaults to development data, no server needed
+npx expo start              # i = iOS simulator, w = web
+npm run check               # typecheck, lint, tests, server typecheck + bundle
 ```
 
-With no `EXPO_PUBLIC_API_URL` set, the AI features return sample data (demo mode) so you can click through everything.
+Native features (camera, Sign in with Apple, notifications) need a development build: `npx expo run:ios` or `eas build --profile development`.
 
-## Turn on the AI (Netlify)
+## Data modes
 
-The Anthropic key never ships inside the app. `server/` is a one-function Netlify site.
+| Mode | When | Food data | Accounts |
+|---|---|---|---|
+| server | `EXPO_PUBLIC_API_URL` set | USDA, Open Food Facts, Nutritionix, FatSecret (whichever keys exist) | Supabase |
+| development | `EXPO_PUBLIC_DATA_MODE=development` and not a production build | Labeled fixtures in `shared/dev/fixtures.ts` | Device-only |
+| open-food-facts | Native app, no server | Packaged foods + barcodes straight from Open Food Facts | Supabase if configured |
 
-1. Create a new Netlify site with **base directory = `server`**.
-2. Add environment variables: `ANTHROPIC_API_KEY` (required), `APP_KEY` (optional), `ANTHROPIC_MODEL` (optional, defaults to `claude-sonnet-5`).
-3. Deploy. The endpoint is `https://YOUR-SITE.netlify.app/api/ai`.
-4. In the app, copy `.env.example` to `.env` and set `EXPO_PUBLIC_API_URL=https://YOUR-SITE.netlify.app/api`.
-5. Put the same URL in `eas.json` under `build.production.env`.
+Nothing ever falls back to invented nutrition. If a source is missing, the screen says so.
 
-## Ship to the App Store
+## Deploy (Netlify, one site)
 
-Needs an Apple Developer account ($99/yr).
+1. New site from this repo, base directory = repo root (uses `netlify.toml`: builds the web app into `dist`, functions from `server/netlify/functions`).
+2. Add the server variables listed at the bottom of `.env.example`, plus the `EXPO_PUBLIC_*` ones for the web build.
+3. `EXPO_PUBLIC_API_URL` = the site origin, e.g. `https://plategauge.netlify.app` (no `/api`).
+4. Check `https://YOUR-SITE/api/status` — it lists which services are connected.
 
-```bash
-npm i -g eas-cli
-eas login
-eas init                       # links the project, writes projectId to app.json
-eas build -p ios --profile production
-eas submit -p ios --profile production
-```
+Endpoints: `/api/food/search`, `/api/food/barcode`, `/api/food/customize`, `/api/crave`, `/api/ai`, `/api/account/delete`, `/api/status`.
 
-`eas build` handles certificates and provisioning. `eas submit` uploads to App Store Connect, where you finish the listing and send it to review.
+## Supabase
 
-Before you submit:
+1. Create a project. Run `supabase/migrations/20260917000000_plategauge_init.sql` (SQL editor or `supabase db push`).
+2. Authentication → Providers: enable Email; Apple (Client IDs: your bundle ID, `com.plategauge.app`); Google (web client ID + secret).
+3. Authentication → URL Configuration → Redirect URLs: `plategauge://**` and `https://YOUR-SITE/**`.
+4. Put the project URL and anon key in the app env, and the service-role key in Netlify only.
 
-- Change `ios.bundleIdentifier` in `app.json` if `com.plategauge.app` is taken.
-- **Privacy policy URL** is required. It must say meal photos and descriptions are sent to Anthropic for nutrition estimates, and that the food log stays on the device.
-- **App Privacy** questionnaire: declare Photos (App Functionality, not linked to identity) and User Content (App Functionality). No tracking.
-- The app asks for permission before anything is sent to AI (Apple guideline 5.1.2). Users can switch it off in Progress.
-- Screenshots: iPhone 6.9" set is required. iPad isn’t needed because `supportsTablet` is `false`.
-- Keep the in-app “estimates, not medical advice” copy. Apple reviews health claims closely.
-
-## Structure
+## Layout
 
 ```
-app/                 routes (Expo Router)
-  (tabs)/            Today, Log, Scan, Crave, Progress
-  review.tsx         confirm sheet every add flows through
-  menus.tsx kitchen.tsx setup.tsx goals.tsx
-src/
-  components/        Gauge, Logo, Ideas, UI kit
-  api.ts             Open Food Facts + AI client (demo fallback, consent gate)
-  store.ts           Zustand + AsyncStorage persistence
-  nutrition.ts       Mifflin–St Jeor targets
-  foods.ts           built-in common foods (USDA reference values)
-server/              Netlify function that talks to Claude
-assets/              icon, splash, adaptive icons
+app/                  screens (Expo Router)
+  (tabs)/             Today, Log, Crave, Progress (+ button opens app/add.tsx)
+shared/               framework-free logic used by app, server and tests
+  crave.ts intent.ts rank.ts questions.ts      Crave engine
+  customize.ts templates.ts resolve.ts          Build It
+  restaurants.ts reference.ts tags.ts           menu rules, estimate components, food lexicon
+  productScore.ts balance.ts targets.ts streak.ts barcode.ts gate.ts prompts.ts
+server/netlify/       functions + provider adapters (lib/providers/*)
+src/                  store (versioned migrations), services, components
+supabase/migrations/  schema + RLS
+tests/                vitest (Crave scenarios, Build It math, gate, streaks, targets, barcodes, scores, focus layout)
 ```
 
-## Next up
+## Known limits
 
-- Apple Health sync for weight and active energy (`react-native-health`, needs a dev build)
-- Subscription paywall for AI features (RevenueCat) — the AI calls are the only real per-user cost
-- Rate limiting on the function (Netlify Blobs or Upstash) before launch
+- Restaurant customization is exact only where a menu rule exists (Culver’s burgers, Olive Garden lasagna today); other chains get portion and side options only, labeled as estimates.
+- No database has every barcode. Unknown products go to “scan the label / enter it once”.
+- Apple Health / Health Connect: adapter in `src/services/health.ts`, native module not installed yet.
+- Dark mode isn’t supported yet (the app forces light).

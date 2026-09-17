@@ -4,3 +4,11 @@
 
 [functions]
   node_bundler = "esbuild"
+  included_files = []
+
+# Security headers for the API site
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "no-referrer"

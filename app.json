@@ -14,9 +14,10 @@
       "supportsTablet": false,
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
-        "NSCameraUsageDescription": "PlateGauge uses the camera to photograph meals and scan food barcodes so you can log them.",
-        "NSPhotoLibraryUsageDescription": "PlateGauge lets you pick a meal photo from your library to estimate its calories."
-      }
+        "NSCameraUsageDescription": "PlateGauge uses the camera to photograph meals, read nutrition labels and scan food barcodes so you can log them.",
+        "NSPhotoLibraryUsageDescription": "PlateGauge lets you choose a meal or nutrition label photo from your library to analyze it."
+      },
+      "usesAppleSignIn": true
     },
     "android": {
       "package": "com.plategauge.app",
@@ -29,7 +30,13 @@
     },
     "web": {
       "favicon": "./assets/favicon.png",
-      "output": "single"
+      "output": "single",
+      "name": "PlateGauge",
+      "shortName": "PlateGauge",
+      "themeColor": "#0B2551",
+      "backgroundColor": "#FFFFFF",
+      "description": "Calorie and macro tracker. Tell it what you’re hungry for and see how to make it fit.",
+      "lang": "en"
     },
     "plugins": [
       "expo-router",
@@ -56,10 +63,20 @@
           "cameraPermission": false,
           "microphonePermission": false
         }
+      ],
+      "expo-apple-authentication",
+      "expo-secure-store",
+      "expo-web-browser",
+      [
+        "expo-notifications",
+        {
+          "color": "#1592FF"
+        }
       ]
     ],
     "experiments": {
       "typedRoutes": false
-    }
+    },
+    "description": "Calorie and macro tracker. Tell it what you’re hungry for and see how to make it fit."
   }
 }

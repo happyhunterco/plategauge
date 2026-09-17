@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { AccessibilityInfo, StyleSheet, Text, View } from 'react-native';
 import Svg, { Circle, Line, Path } from 'react-native-svg';
-import { fmt } from '../nutrition';
+import { fmt } from '../hooks';
 import { color, font } from '../theme';
 import { arc } from './Logo';
 
@@ -47,16 +47,21 @@ export function Gauge({ eaten, goal, size = 264 }: Props) {
 
   const over = eaten > goal && goal > 0;
   const left = Math.max(goal - eaten, 0);
-  const stroke = 22;
+  const stroke = size < 240 ? 18 : 22;
   const c = size / 2;
   const r = c - stroke / 2 - 10;
+  const small = size < 240;
   const deg = Math.max(p * 360, 0.01);
   const a = ((deg - 90) * Math.PI) / 180;
+  // Size the number to the inner ring so "12,480" never truncates (auto-shrink doesn't exist on web).
+  const bigText = over ? `+${fmt(eaten - goal)}` : fmt(left);
+  const inner = r * 0.66 * 2 - 16;
+  const bigSize = Math.floor(Math.min(small ? 40 : 46, inner / (bigText.length * 0.62)));
   const needle = [r - 17, r + 17].map((rr) => [c + rr * Math.cos(a), c + rr * Math.sin(a)]);
 
   return (
     <View
-      style={{ width: size, height: size }}
+      style={{ width: size, height: size, alignSelf: 'center' }}
       accessible
       accessibilityRole="progressbar"
       accessibilityLabel={over ? `${fmt(eaten - goal)} calories over your goal` : `${fmt(left)} calories left of ${fmt(goal)}`}
@@ -70,17 +75,14 @@ export function Gauge({ eaten, goal, size = 264 }: Props) {
         ) : null}
         <Circle cx={c} cy={c} r={r * 0.66} stroke={color.rim} strokeWidth={2} fill="none" />
         {!over && p > 0.004 && (
-          <Line
-            x1={needle[0][0]} y1={needle[0][1]} x2={needle[1][0]} y2={needle[1][1]}
-            stroke={color.needle} strokeWidth={7} strokeLinecap="round"
-          />
+          <Line x1={needle[0][0]} y1={needle[0][1]} x2={needle[1][0]} y2={needle[1][1]} stroke={color.needle} strokeWidth={7} strokeLinecap="round" />
         )}
       </Svg>
       <View style={[StyleSheet.absoluteFill, styles.center]} pointerEvents="none">
-        <Text style={styles.big} adjustsFontSizeToFit numberOfLines={1}>
-          {over ? `+${fmt(eaten - goal)}` : fmt(left)}
+        <Text style={[styles.big, { fontSize: bigSize }]} numberOfLines={1}>
+          {bigText}
         </Text>
-        <Text style={styles.label}>{over ? 'over goal' : 'left'}</Text>
+        <Text style={styles.label}>{over ? 'cal over' : 'cal left'}</Text>
         <Text style={styles.small}>
           {fmt(eaten)} of {fmt(goal)}
         </Text>
@@ -90,7 +92,7 @@ export function Gauge({ eaten, goal, size = 264 }: Props) {
 }
 
 const styles = StyleSheet.create({
-  center: { alignItems: 'center', justifyContent: 'center', paddingHorizontal: 70 },
+  center: { alignItems: 'center', justifyContent: 'center' },
   big: { fontFamily: font.displayBold, fontSize: 46, letterSpacing: -1.5, color: color.ink, fontVariant: ['tabular-nums'] },
   label: { fontFamily: font.displayMed, fontSize: 15, color: color.ink, marginTop: -2 },
   small: { fontSize: 13, color: color.sub, marginTop: 6, fontVariant: ['tabular-nums'] },
