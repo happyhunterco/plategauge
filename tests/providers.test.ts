@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { hff } from '../server/netlify/lib/providers/hff';
+import { offToItem } from '../server/netlify/lib/providers/off';
 
 afterEach(() => vi.unstubAllGlobals());
 
@@ -68,5 +69,17 @@ describe('HealthyFastFood provider', () => {
     expect(items[0]?.restaurant).toBe('hff:whataburger');
     expect(items[0]?.source.provider).toBe('hff');
     expect(items.map((item) => item.name)).not.toContain('Sesame Bun');
+  });
+});
+
+describe('Open Food Facts provider', () => {
+  it('accepts the array-shaped brands field returned by search', () => {
+    const item = offToItem({
+      code: '123',
+      product_name: 'Pretzel Crisps',
+      brands: ['Snack Factory', 'Second Brand'],
+      nutriments: { 'energy-kcal_100g': 380, proteins_100g: 10, carbohydrates_100g: 70, fat_100g: 7 },
+    });
+    expect(item?.brand).toBe('Snack Factory');
   });
 });
