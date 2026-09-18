@@ -1,8 +1,13 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { hff } from '../server/netlify/lib/providers/hff';
-import { offToItem } from '../server/netlify/lib/providers/off';
+import { off, offToItem } from '../server/netlify/lib/providers/off';
+import { searchFoods } from '../server/netlify/lib/providers';
+import type { FoodItem } from '../shared/food';
 
-afterEach(() => vi.unstubAllGlobals());
+afterEach(() => {
+  vi.unstubAllGlobals();
+  vi.restoreAllMocks();
+});
 
 describe('HealthyFastFood provider', () => {
   it('uses category-aware ranking for every supported restaurant', async () => {
@@ -81,5 +86,28 @@ describe('Open Food Facts provider', () => {
       nutriments: { 'energy-kcal_100g': 380, proteins_100g: 10, carbohydrates_100g: 70, fat_100g: 7 },
     });
     expect(item?.brand).toBe('Snack Factory');
+  });
+});
+
+describe('merged provider routing', () => {
+  it('treats a chain typed in the query as a restaurant filter', async () => {
+    const culvers: FoodItem = {
+      id: 'hff:culvers:butterburger',
+      name: 'ButterBurger Single',
+      brand: 'Culver’s',
+      kind: 'restaurant',
+      restaurant: 'culvers',
+      category: 'burger',
+      serving: { description: '1 serving', quantity: 1, unit: 'serving' },
+      nutrients: { calories: 390, protein: 20, carbs: 38, fat: 17 },
+      source: { provider: 'hff', quality: 'verified_restaurant' },
+    };
+    const offSearch = vi.spyOn(off, 'search').mockResolvedValue([]);
+    vi.spyOn(hff, 'search').mockResolvedValue([culvers]);
+
+    const page = await searchFoods({ q: "Culver's cheeseburger routing regression", page: 1, pageSize: 10 });
+
+    expect(page.items).toEqual([culvers]);
+    expect(offSearch).not.toHaveBeenCalled();
   });
 });
