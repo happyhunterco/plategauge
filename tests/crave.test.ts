@@ -100,3 +100,23 @@ describe('restrictions', () => {
     expect(r.showSimilar).toBe(true);
   });
 });
+
+describe('mood cravings never come back empty (live-site conditions)', () => {
+  const bareDeps: CraveDeps = {
+    search: async () => [],
+    lookup: async () => null,
+    // no ideas() — exactly like the deployed site with no AI ideas wired
+  };
+  it('returns real foods for "salty and crunchy" with no AI and no database', async () => {
+    const r = await runCrave({ text: 'something salty and crunchy', left: roomy, prefs }, bareDeps);
+    expect(r.exact).toBeNull();
+    expect(r.similar.length).toBeGreaterThan(2);
+    for (const s of r.similar) expect(s.item.nutrients.calories).toBeGreaterThan(0);
+    expect(r.similar.some((s) => /pretzel|popcorn|chips|almond|crisp/i.test(s.item.name))).toBe(true);
+  });
+  it('returns cold sweet foods for "sweet and cold"', async () => {
+    const r = await runCrave({ text: 'sweet and cold', left: roomy, prefs }, bareDeps);
+    expect(r.similar.length).toBeGreaterThan(1);
+    expect(r.similar.some((s) => /yogurt|smoothie|ice cream|frozen/i.test(s.item.name))).toBe(true);
+  });
+});

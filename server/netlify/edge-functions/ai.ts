@@ -57,15 +57,30 @@ async function claude(system: string, content: Content[], maxTokens = 1500): Pro
   const res = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: { 'content-type': 'application/json', 'x-api-key': env('ANTHROPIC_API_KEY'), 'anthropic-version': '2023-06-01' },
-    body: JSON.stringify({ model: env('ANTHROPIC_MODEL') || 'claude-sonnet-5', max_tokens: maxTokens, system, messages: [{ role: 'user', content }] }),
+    body: JSON.stringify({ model: env('ANTHROPIC_MODEL') || 'claude-haiku-4-5', max_tokens: maxTokens, system, messages: [{ role: 'user', content }] }),
   });
   if (res.status === 429) throw Object.assign(new Error('rate_limited'), { status: 429 });
   if (!res.ok) {
-    console.error('anthropic', res.status, (await res.text()).slice(0, 500));
-    throw Object.assign(new Error('upstream'), { status: 502 });
+    const detail = (await res.text()).slice(0, 300);
+    console.error('anthropic', res.status, detail);
+    // Pass Anthropic's own reason back to the app so the user sees what's actually wrong
+    // (invalid key, no billing/credits, unknown model) instead of a generic failure.
+    let reason = `Anthropic ${res.status}`;
+    try {
+      const j = JSON.parse(detail) as { error?: { message?: string } };
+      if (j.error?.message) reason = j.error.message;
+    } catch {
+      /* keep default */
+    }
+    if (res.status === 401) reason = 'API key is missing or invalid.';
+    if (res.status === 400 && /credit|billing|balance/i.test(reason)) reason = 'Your Anthropic account has no credit. Add billing at console.anthropic.com.';
+    throw Object.assign(new Error(reason), { status: 502, reason });
   }
   const data = (await res.json()) as { content?: { type: string; text?: string }[] };
-  return (data.content ?? []).filter((b) => b.type === 'text').map((b) => b.text).join('');
+  return (data.content ?? [])
+    .filter((b) => b.type === 'text')
+    .map((b) => b.text)
+    .join('');
 }
 
 /** Pull the JSON object out of the model's reply. Mirrors extractJson in shared/prompts.ts. */
@@ -124,16 +139,25 @@ export default async (req: Request) => {
     }
     if (task === 'kitchen') {
       const left = body.left as Record<string, number> | undefined;
-      const pantry = Array.isArray(body.pantry) ? body.pantry.map((p) => str(p, 60)).slice(0, 60).join(', ') : '';
+      const pantry = Array.isArray(body.pantry)
+        ? body.pantry
+            .map((p) => str(p, 60))
+            .slice(0, 60)
+            .join(', ')
+        : '';
       const text = await claude(PROMPTS.kitchen, [
-        { type: 'text', text: `Remaining today: ${left?.calories ?? '?'} kcal, ${left?.protein ?? '?'}g protein.\nPantry: ${pantry}\nIn the mood for: ${str(body.prompt, 300) || 'anything'}` },
+        {
+          type: 'text',
+          text: `Remaining today: ${left?.calories ?? '?'} kcal, ${left?.protein ?? '?'}g protein.\nPantry: ${pantry}\nIn the mood for: ${str(body.prompt, 300) || 'anything'}`,
+        },
       ]);
       return json({ recipes: extractJson(text).recipes ?? [] });
     }
     return json({ error: 'unknown_task' }, 400);
   } catch (e) {
     const status = (e as { status?: number }).status ?? 502;
-    return json({ error: status === 429 ? 'rate_limited' : 'ai_failed' }, status);
+    const reason = (e as { reason?: string }).reason;
+    return json({ error: status === 429 ? 'rate_limited' : 'ai_failed', reason: reason ?? String((e as Error).message).slice(0, 200) }, status);
   }
 };
 

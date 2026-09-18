@@ -6,6 +6,7 @@ import { applyAnswers, nextQuestion, type Question } from './questions';
 import { conflict, nameOverlap, rankCandidates, relevant, type Prefs, type Scored } from './rank';
 import { buildCustomizable, type Lookup } from './resolve';
 import { menuRuleFor, norm, restaurantById } from './restaurants';
+import { moodFoods } from './moodFoods';
 import { categoryOf, NEAR } from './tags';
 
 export type SearchOpts = { restaurantId?: string | null; restaurantName?: string | null; category?: FoodCategory | null; limit?: number };
@@ -159,6 +160,9 @@ export async function runCrave(input: CraveInput, deps: CraveDeps): Promise<Crav
     }),
   );
   if (!intent.specific && deps.ideas) pool.push(...(await deps.ideas(intent, input.left).catch(() => [])));
+  // Guaranteed fallback: built-in real foods matching the mood, so Crave is never empty
+  // for an abstract craving even with no AI and no restaurant-database hit.
+  if (!intent.specific) pool.push(...moodFoods(intent));
 
   const exclude = new Set<string>();
   if (exact) {

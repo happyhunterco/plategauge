@@ -50,11 +50,11 @@ export async function api<T>(path: string, init: RequestInit & { token?: string 
     data = null;
   }
   if (!res.ok) {
-    // A serverless function that times out or crashes returns plain text/HTML, not our JSON shape —
-    // surface that raw body (trimmed) rather than a generic message, so the real cause is visible.
     const code = data?.error ?? (res.status === 502 || res.status === 504 ? 'timeout' : `http_${res.status}`);
+    // Prefer a human reason the server passed along (e.g. the real Anthropic error) over a generic message.
+    const reason = (data as { reason?: string } | null)?.reason;
     const fallback = raw ? `Server error (${res.status}): ${raw.slice(0, 180)}` : `Server error (${res.status}).`;
-    throw new ApiError(MESSAGES[code] ?? fallback, code, res.status);
+    throw new ApiError(reason || MESSAGES[code] || fallback, code, res.status);
   }
   if (data == null) throw new ApiError('The server sent back something PlateGauge couldn’t read. Try again.', 'bad_response', res.status);
   return data;
