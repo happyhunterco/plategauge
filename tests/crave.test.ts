@@ -58,6 +58,27 @@ describe('Scenario A: exact food fits', () => {
   });
 });
 
+describe('restaurant menu browsing', () => {
+  it('returns the actual menu instead of three canned choices', async () => {
+    const r = await runCrave({ text: 'Culver’s', left: roomy, prefs }, deps);
+    expect(r.question).toBeNull();
+    expect(r.menu?.length).toBeGreaterThan(3);
+    expect(r.menu?.every((item) => item.restaurant === 'culvers')).toBe(true);
+  });
+
+  it('supports a restaurant found by the complete server directory', async () => {
+    const item = { ...DEV_FOODS[0], id: 'hff:whataburger:test', brand: 'Whataburger', restaurant: 'hff:whataburger' };
+    const dynamic: CraveDeps = {
+      search: async (_q, options) => (options.restaurantId === 'hff:whataburger' ? [item] : []),
+      lookup: async () => null,
+      restaurant: () => ({ id: 'hff:whataburger', name: 'Whataburger', alias: 'whataburger' }),
+    };
+    const r = await runCrave({ text: 'Whataburger', left: roomy, prefs }, dynamic);
+    expect(r.intent.restaurantName).toBe('Whataburger');
+    expect(r.menu?.[0]?.restaurant).toBe('hff:whataburger');
+  });
+});
+
 describe('Scenario B: exact food does not fit', () => {
   it('keeps the double, offers make-it-fit plans before substitutes', async () => {
     const r = await runCrave({ text: 'I want a Culver’s double cheeseburger', left: tight, prefs }, deps);

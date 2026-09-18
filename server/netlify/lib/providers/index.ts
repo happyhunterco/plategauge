@@ -19,6 +19,7 @@ const searchCache = new TTLCache<SearchPage>(10 * 60_000);
 const barcodeCache = new TTLCache<BarcodeResult>(60 * 60_000);
 
 const dedupeKey = (f: FoodItem) => `${norm(f.brand ?? '')}|${norm(f.name)}|${Math.round(f.nutrients.calories / 10)}`;
+const restaurantSourceRank = (f: FoodItem) => (f.source.provider === 'hff' ? 2 : f.kind === 'restaurant' ? 1 : 0);
 
 /** Keep the best-quality copy of duplicates across providers. */
 export function dedupe(items: FoodItem[]): FoodItem[] {
@@ -83,6 +84,7 @@ export async function searchFoods(p: SearchParams): Promise<SearchPage> {
     (a, b) =>
       foodSearchScore(relevanceQuery, b) - foodSearchScore(relevanceQuery, a) ||
       qualityRank(b.source.quality) - qualityRank(a.source.quality) ||
+      restaurantSourceRank(b) - restaurantSourceRank(a) ||
       a.name.length - b.name.length,
   );
 

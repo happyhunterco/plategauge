@@ -42,6 +42,7 @@ export default function Scan() {
   const [manual, setManual] = useState('');
   const [aiReady, setAiReady] = useState<boolean | null>(null);
   const [slowFor, setSlowFor] = useState<Mode | null>(null);
+  const [cameraReady, setCameraReady] = useState(false);
   const slow = slowFor === mode;
   const cam = useRef<CameraView>(null);
   const lastCode = useRef('');
@@ -136,9 +137,12 @@ export default function Scan() {
           ref={cam}
           style={StyleSheet.absoluteFill}
           facing="back"
+          autofocus="on"
           enableTorch={torch}
-          barcodeScannerSettings={{ barcodeTypes: ['ean13', 'ean8', 'upc_a', 'upc_e', 'itf14'] }}
-          onBarcodeScanned={mode === 'barcode' && !busy ? onCode : undefined}
+          barcodeScannerSettings={{ barcodeTypes: ['ean13', 'ean8', 'upc_a', 'upc_e', 'itf14', 'code128', 'code39'] }}
+          onCameraReady={() => setCameraReady(true)}
+          onMountError={(event) => setErr(event.message || 'The camera could not start. Close the scanner and try again.')}
+          onBarcodeScanned={mode === 'barcode' && cameraReady && !busy ? onCode : undefined}
         />
       ) : null}
 

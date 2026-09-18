@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { hff } from '../server/netlify/lib/providers/hff';
 import { off, offToItem } from '../server/netlify/lib/providers/off';
 import { searchFoods } from '../server/netlify/lib/providers';
+import { fdcToItem } from '../server/netlify/lib/providers/usda';
 import type { FoodItem } from '../shared/food';
 
 afterEach(() => {
@@ -86,6 +87,39 @@ describe('Open Food Facts provider', () => {
       nutriments: { 'energy-kcal_100g': 380, proteins_100g: 10, carbohydrates_100g: 70, fat_100g: 7 },
     });
     expect(item?.brand).toBe('Snack Factory');
+  });
+
+  it('shows a natural unit for a bar while retaining its gram weight internally', () => {
+    const item = offToItem({
+      code: '456',
+      product_name: 'Chocolate Protein Bar',
+      brands: 'Example Co',
+      serving_size: '60 g',
+      serving_quantity: 60,
+      nutriments: { 'energy-kcal_serving': 210, proteins_serving: 20, carbohydrates_serving: 22, fat_serving: 7 },
+    });
+    expect(item?.serving.description).toBe('1 bar');
+    expect(item?.serving.grams).toBe(60);
+  });
+});
+
+describe('USDA provider', () => {
+  it('does not append gram weights to a household serving', () => {
+    const item = fdcToItem({
+      fdcId: 1,
+      description: 'CHOCOLATE PROTEIN BAR',
+      dataType: 'Branded',
+      brandOwner: 'Example Co',
+      servingSize: 60,
+      servingSizeUnit: 'g',
+      householdServingFullText: '1 bar',
+      foodNutrients: [
+        { nutrientId: 1008, value: 350 },
+        { nutrientId: 1003, value: 33 },
+      ],
+    });
+    expect(item?.serving.description).toBe('1 bar');
+    expect(item?.serving.grams).toBe(60);
   });
 });
 

@@ -5,6 +5,7 @@ import { extractJson, foodsFromAi, PROMPTS } from '../../../shared/prompts';
 import { aiConfigured, claude } from '../lib/anthropic';
 import { guard, json } from '../lib/http';
 import { lookupRestaurantItem, searchFoods } from '../lib/providers';
+import { findHffRestaurant } from '../lib/providers/hffRestaurants';
 
 /** POST /api/crave { text, left, prefs, answers } → exact match, make-it-fit plans, similar options */
 export default async (req: Request) => {
@@ -24,8 +25,23 @@ export default async (req: Request) => {
   const result = await runCrave(
     { text, left, prefs, answers: (body.answers as Record<string, Partial<Intent>>) ?? {} },
     {
-      search: async (q, o) => (await searchFoods({ q, page: 1, pageSize: o.limit ?? 10, restaurantId: o.restaurantId })).items,
+      search: async (q, o) => {
+        const query = o.restaurantName && !q.toLowerCase().includes(o.restaurantName.toLowerCase()) ? `${o.restaurantName} ${q}` : q;
+        return (
+          await searchFoods({
+            q: query,
+            page: 1,
+            pageSize: o.limit ?? 10,
+            restaurantId: o.restaurantId,
+            kind: o.restaurantId ? 'restaurant' : undefined,
+          })
+        ).items;
+      },
       lookup: (rid, rname, q) => lookupRestaurantItem(rid, rname, q),
+      restaurant: (text) => {
+        const found = findHffRestaurant(text);
+        return found ? { id: `hff:${found.slug}`, name: found.name, alias: found.alias } : null;
+      },
       ideas: aiConfigured()
         ? async (intent, l) => {
             const wants = [...intent.flavors, ...intent.textures, intent.temperature].filter(Boolean).join(', ');

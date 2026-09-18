@@ -1,12 +1,13 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import type { CraveResult, ExactResult } from '../../shared/crave';
 import type { FitPlan } from '../../shared/customize';
 import type { FoodItem, Selection } from '../../shared/food';
 import type { Intent } from '../../shared/intent';
 import { restaurantById } from '../../shared/restaurants';
+import { categoryOf } from '../../shared/tags';
 import type { Scored } from '../../shared/rank';
 import { useHandoff } from '../../src/building';
 import { Card, Choices, DevDataBanner, SkeletonRows, SourceLine, TopBar } from '../../src/components/Kit';
@@ -17,6 +18,7 @@ import { useStore } from '../../src/store';
 import { color, font, space } from '../../src/theme';
 
 const EXAMPLES = ['Culver’s cheeseburger', 'Olive Garden lasagna', 'Something salty and crunchy', 'Sweet and cold'];
+const EMPTY_MENU: FoodItem[] = [];
 
 export default function Crave() {
   const router = useRouter();
@@ -31,6 +33,8 @@ export default function Crave() {
   const [err, setErr] = useState('');
   const [showSimilar, setShowSimilar] = useState(false);
   const [opening, setOpening] = useState<string | null>(null);
+  const [menuQuery, setMenuQuery] = useState('');
+  const [menuCategory, setMenuCategory] = useState('all');
 
   const prefs = { restrictions: profile?.restrictions ?? [], allergies: profile?.allergies ?? [] };
   const favorites = (profile?.favoriteRestaurants ?? []).map((id) => restaurantById(id)).filter(Boolean);
@@ -40,6 +44,8 @@ export default function Crave() {
     setErr('');
     setBusy(true);
     setShowSimilar(false);
+    setMenuQuery('');
+    setMenuCategory('all');
     try {
       setResult(await crave({ text: t.trim(), left, prefs, answers: a }));
     } catch (e) {
@@ -77,8 +83,29 @@ export default function Crave() {
     }
   };
 
+  const openMenuItem = async (item: FoodItem) => {
+    setOpening(item.id);
+    try {
+      setBuild({ custom: await customize(item, item.name), via: 'crave' });
+      router.push('/build');
+    } catch (e) {
+      setErr((e as Error).message);
+    } finally {
+      setOpening(null);
+    }
+  };
+
   const ex = result?.exact ?? null;
   const similarVisible = !!result && (result.showSimilar || showSimilar);
+  const menu = result?.menu ?? EMPTY_MENU;
+  const menuCategories = useMemo(() => [...new Set(menu.map((item) => item.category ?? categoryOf(item.name) ?? 'other'))].sort(), [menu]);
+  const visibleMenu = useMemo(() => {
+    const q = menuQuery.trim().toLowerCase();
+    return menu.filter((item) => {
+      const category = item.category ?? categoryOf(item.name) ?? 'other';
+      return (menuCategory === 'all' || category === menuCategory) && (!q || `${item.name} ${item.brand ?? ''}`.toLowerCase().includes(q));
+    });
+  }, [menu, menuCategory, menuQuery]);
 
   return (
     <View style={{ flex: 1, backgroundColor: '#fff' }}>
@@ -145,6 +172,48 @@ export default function Crave() {
                   options={result.question.options.map((o) => o.label)}
                   onPick={(i) => answer(result.question!.id, result.question!.options[i].patch)}
                 />
+              </Section>
+            ) : null}
+
+            {menu.length ? (
+              <Section title={`${result.intent.restaurantName} menu`}>
+                <View style={{ gap: space.m }}>
+                  <Field
+                    icon="search"
+                    placeholder={`Search ${result.intent.restaurantName ?? 'the'} menu`}
+                    value={menuQuery}
+                    onChangeText={setMenuQuery}
+                    accessibilityLabel="Search restaurant menu"
+                  />
+                  <View style={styles.chips}>
+                    <Chip label="All" on={menuCategory === 'all'} onPress={() => setMenuCategory('all')} />
+                    {menuCategories.map((category) => (
+                      <Chip
+                        key={category}
+                        label={category.replace(/_/g, ' ').replace(/\b\w/g, (letter) => letter.toUpperCase())}
+                        on={menuCategory === category}
+                        onPress={() => setMenuCategory(category)}
+                      />
+                    ))}
+                  </View>
+                  <Text style={styles.muted}>{visibleMenu.length} menu item{visibleMenu.length === 1 ? '' : 's'}</Text>
+                  {visibleMenu.length ? (
+                    <View style={{ gap: space.m }}>
+                      {visibleMenu.map((item) => (
+                        <MenuItemCard
+                          key={item.id}
+                          item={item}
+                          left={left}
+                          loading={opening === item.id}
+                          onLog={() => logItem(item)}
+                          onCustomize={() => openMenuItem(item)}
+                        />
+                      ))}
+                    </View>
+                  ) : (
+                    <Text style={styles.muted}>No menu items match that search.</Text>
+                  )}
+                </View>
               </Section>
             ) : null}
 
@@ -294,7 +363,6 @@ function ExactCard({ ex, left, onLog, onCustomize }: { ex: ExactResult; left: Le
         </View>
       </View>
       <Text style={styles.itemName}>{ex.item.name}</Text>
-      {ex.item.brand ? <Text style={styles.muted}>{ex.item.brand}</Text> : null}
       {ex.computed.summary.length ? <Text style={styles.changes}>{ex.computed.summary.join(', ')}</Text> : null}
       <View style={styles.numbers}>
         <Text style={styles.bigCal}>
@@ -306,7 +374,12 @@ function ExactCard({ ex, left, onLog, onCustomize }: { ex: ExactResult; left: Le
           {n.sodium != null ? `   ${fmt(n.sodium)}mg sodium` : ''}
         </Text>
       </View>
-      <SourceLine source={{ ...ex.item.source, quality: ex.computed.quality }} serving={ex.item.serving.description} />
+      <SourceLine
+        source={{ ...ex.item.source, quality: ex.computed.quality }}
+        serving={ex.item.serving.description}
+        label={ex.item.brand}
+        showProvider={false}
+      />
       <FitLine cal={n.calories} left={left} />
       {ex.conflict ? <Text style={styles.warn}>{ex.conflict}. Check ingredients with the restaurant.</Text> : null}
       <View style={styles.rowBtns}>
@@ -356,14 +429,31 @@ function SimilarCard({ s, left, loading, onLog, onCustomize }: { s: Scored; left
       <View style={styles.simHead}>
         <View style={{ flex: 1, minWidth: 0 }}>
           <Text style={styles.itemName}>{s.item.name}</Text>
-          {s.item.brand ? <Text style={styles.muted}>{s.item.brand}</Text> : null}
         </View>
         <Text style={styles.simCal}>{fmt(n.calories)}</Text>
       </View>
       <Text style={styles.muted}>{macroLine(n)}</Text>
       {s.reasons.length ? <Text style={styles.reasons}>{s.reasons.slice(0, 3).join(' · ')}</Text> : null}
-      <SourceLine source={s.item.source} serving={s.item.serving.description} />
+      <SourceLine source={s.item.source} serving={s.item.serving.description} label={s.item.brand} showProvider={false} />
       <FitLine cal={n.calories} left={left} />
+      <View style={styles.rowBtns}>
+        <Button label="Log" icon="add" kind="secondary" onPress={onLog} style={styles.smallBtn} />
+        <Button label="Customize" icon="options-outline" kind="secondary" loading={loading} onPress={onCustomize} style={styles.smallBtn} />
+      </View>
+    </Card>
+  );
+}
+
+function MenuItemCard({ item, left, loading, onLog, onCustomize }: { item: FoodItem; left: Left; loading: boolean; onLog: () => void; onCustomize: () => void }) {
+  return (
+    <Card>
+      <View style={styles.simHead}>
+        <Text style={[styles.itemName, { flex: 1 }]}>{item.name}</Text>
+        <Text style={styles.simCal}>{fmt(item.nutrients.calories)}</Text>
+      </View>
+      <Text style={styles.muted}>{macroLine(item.nutrients)}</Text>
+      <SourceLine source={item.source} serving={item.serving.description} label={item.brand} showProvider={false} />
+      <FitLine cal={item.nutrients.calories} left={left} />
       <View style={styles.rowBtns}>
         <Button label="Log" icon="add" kind="secondary" onPress={onLog} style={styles.smallBtn} />
         <Button label="Customize" icon="options-outline" kind="secondary" loading={loading} onPress={onCustomize} style={styles.smallBtn} />
