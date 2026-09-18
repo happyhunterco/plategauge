@@ -38,7 +38,10 @@ export async function searchFoods(p: SearchParams): Promise<SearchPage> {
   const hit = searchCache.get(key);
   if (hit) return hit;
 
-  const r = restaurantById(p.restaurantId);
+  // A typed chain name is a restaurant filter even when the client did not
+  // separately pass restaurantId. This keeps "Culver's cheeseburger" inside
+  // Culver's instead of mixing in unrelated packaged cheeseburgers.
+  const r = restaurantById(p.restaurantId) ?? findRestaurant(p.q)?.restaurant ?? null;
   const query = r && !norm(p.q).includes(norm(r.name)) ? `${r.name} ${p.q}` : p.q;
   const wantRestaurant = p.kind === 'restaurant' || !!r;
   const active = configuredProviders().filter((pr) => {
