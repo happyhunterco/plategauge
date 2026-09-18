@@ -39,6 +39,23 @@ describe('Scenario A: exact food fits', () => {
     expect(r.showSimilar).toBe(false);
     for (const s of r.similar) expect(s.item.name).not.toMatch(/yogurt|quesadilla/i);
   });
+  it('never mistakes a shared ingredient word for the requested food', async () => {
+    const burger = DEV_FOODS.find((f) => f.name === 'ButterBurger Cheese Single')!;
+    const soup = {
+      ...DEV_FOODS.find((f) => f.name === 'Zuppa Toscana')!,
+      id: 'test:broccoli-cheese-soup',
+      name: 'Broccoli Cheese Soup',
+      restaurant: 'culvers',
+      brand: 'Culver’s',
+      category: 'soup' as const,
+    };
+    const mixed: CraveDeps = {
+      search: async () => [soup, burger],
+      lookup: async () => null,
+    };
+    const r = await runCrave({ text: 'Culver’s cheeseburger', left: roomy, prefs }, mixed);
+    expect(r.exact?.item.name).toBe('ButterBurger Cheese Single');
+  });
 });
 
 describe('Scenario B: exact food does not fit', () => {
