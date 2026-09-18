@@ -1,5 +1,7 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { Alert, Linking, Platform, Pressable, StyleSheet, Switch, Text, View } from 'react-native';
+import { Alert, Image, Linking, Platform, Pressable, StyleSheet, Switch, Text, View } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
 import { useEffect, useState } from 'react';
 import { dailyBalance } from '../shared/balance';
 import { RESTAURANTS } from '../shared/restaurants';
@@ -39,6 +41,9 @@ export default function Profile() {
   const [notifErr, setNotifErr] = useState('');
   const [busy, setBusy] = useState(false);
   const [allergies, setAllergies] = useState(p?.allergies.join(', ') ?? '');
+  const [name, setName] = useState(p?.name ?? '');
+  const [username, setUsername] = useState(p?.username ?? '');
+  const [nameErr, setNameErr] = useState('');
   const t = useDayTotals(dayKey());
 
   useEffect(() => {
@@ -46,6 +51,23 @@ export default function Profile() {
   }, []);
 
   if (!p || !s.goals) return null;
+
+  const pickAvatar = async () => {
+    const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!perm.granted) {
+      Alert.alert('Photos access needed', 'Allow photo access to set a profile picture.');
+      return;
+    }
+    const res = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], allowsEditing: true, aspect: [1, 1], quality: 0.7 });
+    if (!res.canceled && res.assets[0]) save('avatar', res.assets[0].uri);
+  };
+  const saveName = () => save('name', name.trim());
+  const saveUsername = () => {
+    const u = username.trim();
+    if (u && u.length < 3) return setNameErr('Username needs at least 3 characters.');
+    setNameErr('');
+    save('username', u || null);
+  };
   const metric = s.settings.units === 'metric';
   const w = (lb: number) => (metric ? `${Math.round(lb * 0.4536)} kg` : `${lb} lb`);
   const h = metric ? `${Math.round(p.heightIn * 2.54)} cm` : `${Math.floor(p.heightIn / 12)}′ ${Math.round(p.heightIn % 12)}″`;
@@ -71,14 +93,42 @@ export default function Profile() {
   return (
     <Screen top={false}>
       <View style={styles.head}>
-        <Avatar size={64} />
+        <Pressable onPress={pickAvatar} accessibilityRole="button" accessibilityLabel="Change profile photo" style={styles.avatarWrap}>
+          {p.avatar ? <Image source={{ uri: p.avatar }} style={styles.avatarImg} accessibilityIgnoresInvertColors /> : <Avatar size={72} />}
+          <View style={styles.avatarEdit}>
+            <Ionicons name="camera" size={14} color="#fff" />
+          </View>
+        </Pressable>
         <View style={{ flex: 1, minWidth: 0 }}>
           <Text style={styles.name}>{p.name || 'Your profile'}</Text>
           <Text style={styles.sub} numberOfLines={1}>
-            {s.account?.email ?? (s.account ? `Signed in with ${s.account.provider}` : 'Not signed in')}
+            {p.username ? `@${p.username}` : (s.account?.email ?? (s.account ? `Signed in with ${s.account.provider}` : 'Not signed in'))}
           </Text>
         </View>
       </View>
+
+      <Section title="Your info">
+        <Field label="Display name" value={name} onChangeText={setName} onBlur={() => saveName()} placeholder="Your name" />
+        <Field
+          label="Username"
+          value={username}
+          autoCapitalize="none"
+          autoCorrect={false}
+          onChangeText={(t) =>
+            setUsername(
+              t
+                .toLowerCase()
+                .replace(/[^a-z0-9_]/g, '')
+                .slice(0, 20),
+            )
+          }
+          onBlur={saveUsername}
+          placeholder="username"
+          style={{ marginTop: space.m }}
+        />
+        <Text style={styles.fine}>Your username is how friends will find you when groups arrive. Letters, numbers and underscores.</Text>
+        {nameErr ? <ErrorNote text={nameErr} /> : null}
+      </Section>
 
       <Section title="Body">
         <Group>
@@ -333,6 +383,21 @@ export default function Profile() {
 
 const styles = StyleSheet.create({
   head: { flexDirection: 'row', alignItems: 'center', gap: space.l, paddingHorizontal: space.l, paddingTop: space.m },
+  avatarWrap: { width: 72, height: 72 },
+  avatarImg: { width: 72, height: 72, borderRadius: 36, backgroundColor: color.wash },
+  avatarEdit: {
+    position: 'absolute',
+    right: -2,
+    bottom: -2,
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: color.gauge,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: '#fff',
+  },
   name: { fontFamily: font.displayBold, fontSize: 24, color: color.ink },
   sub: { fontSize: 14, color: color.sub },
   label: { fontSize: 13, color: color.sub, marginTop: space.l, marginBottom: 6 },

@@ -4,7 +4,7 @@ import { ImageManipulator, SaveFormat } from 'expo-image-manipulator';
 import * as ImagePicker from 'expo-image-picker';
 import { useIsFocused, useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Linking, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Animated, Easing, Linking, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { checkDigitValid } from '../shared/barcode';
 import { useHandoff } from '../src/building';
@@ -45,6 +45,7 @@ export default function Scan() {
   const slow = slowFor === mode;
   const cam = useRef<CameraView>(null);
   const lastCode = useRef('');
+  const [scanY] = useState(() => new Animated.Value(0));
 
   useEffect(() => {
     aiAvailable().then((a) => setAiReady(!!a));
@@ -113,6 +114,18 @@ export default function Scan() {
   };
 
   const cameraOk = !!perm?.granted;
+  // A red line sweeping the box makes it obvious the scanner is actively looking.
+  useEffect(() => {
+    if (mode !== 'barcode' || !cameraOk) return;
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(scanY, { toValue: 1, duration: 1400, easing: Easing.inOut(Easing.quad), useNativeDriver: true }),
+        Animated.timing(scanY, { toValue: 0, duration: 1400, easing: Easing.inOut(Easing.quad), useNativeDriver: true }),
+      ]),
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [mode, cameraOk, scanY]);
   const aiBlocked = mode !== 'barcode' && aiReady === false;
   const needsCamera = true;
 
@@ -182,13 +195,19 @@ export default function Scan() {
         </View>
       ) : (
         <View style={styles.frameWrap} pointerEvents="none">
-          {cameraOk ? <View style={mode === 'food' ? styles.frameRound : mode === 'barcode' ? styles.frameBar : styles.frameLabel} /> : null}
+          {cameraOk && mode === 'barcode' ? (
+            <View style={styles.frameBar}>
+              <Animated.View style={[styles.scanLine, { transform: [{ translateY: scanY.interpolate({ inputRange: [0, 1], outputRange: [6, 138] }) }] }]} />
+            </View>
+          ) : cameraOk ? (
+            <View style={mode === 'food' ? styles.frameRound : styles.frameLabel} />
+          ) : null}
           <Text style={styles.hint}>
             {mode === 'food'
               ? 'Fit the whole meal in the circle'
               : mode === 'barcode'
                 ? cameraOk
-                  ? 'Center the barcode in the box'
+                  ? 'Point at a barcode — it scans automatically'
                   : 'Type the barcode number below'
                 : 'Fill the frame with the Nutrition Facts panel'}
           </Text>
@@ -297,7 +316,19 @@ const styles = StyleSheet.create({
   secondaryText: { color: '#fff', fontSize: 15, textDecorationLine: 'underline' },
   frameWrap: { ...StyleSheet.absoluteFill, alignItems: 'center', justifyContent: 'center', paddingHorizontal: space.xl },
   frameRound: { width: 270, height: 270, borderRadius: 135, borderWidth: 3, borderColor: 'rgba(255,255,255,0.85)' },
-  frameBar: { width: 290, height: 150, borderRadius: 18, borderWidth: 3, borderColor: color.gauge },
+  frameBar: { width: 290, height: 150, borderRadius: 18, borderWidth: 3, borderColor: color.gauge, overflow: 'hidden' },
+  scanLine: {
+    position: 'absolute',
+    left: 8,
+    right: 8,
+    height: 2.5,
+    borderRadius: 2,
+    backgroundColor: '#FF4D4D',
+    shadowColor: '#FF4D4D',
+    shadowOpacity: 0.9,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 0 },
+  },
   frameLabel: { width: 250, height: 330, borderRadius: 14, borderWidth: 3, borderColor: 'rgba(255,255,255,0.85)' },
   hint: { color: '#fff', marginTop: space.l, fontSize: 15, textAlign: 'center' },
   subHint: { color: '#A9BAD3', marginTop: space.s, fontSize: 13, textAlign: 'center' },

@@ -10,6 +10,8 @@ export type Meal = 'breakfast' | 'lunch' | 'dinner' | 'snack';
 
 export type Profile = {
   name: string;
+  username?: string | null;
+  avatar?: string | null; // local file uri or remote url
   sex: Sex;
   age: number;
   heightIn: number;

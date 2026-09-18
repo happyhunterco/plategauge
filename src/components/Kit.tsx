@@ -1,5 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useId } from 'react';
+import { Image } from 'react-native';
 import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 import { useRouter } from 'expo-router';
 import type { ReactNode } from 'react';
@@ -130,6 +131,7 @@ export function Choices({ prompt, options, onPick }: { prompt: string; options: 
 export function Avatar({ size = 36 }: { size?: number }) {
   const router = useRouter();
   const name = useStore((s) => s.profile?.name || s.account?.email || '');
+  const avatar = useStore((s) => s.profile?.avatar);
   const initials =
     name
       .split(/[\s@.]+/)
@@ -148,7 +150,13 @@ export function Avatar({ size = 36 }: { size?: number }) {
       }}
       style={[styles.avatar, { width: size, height: size, borderRadius: size / 2 }]}
     >
-      {initials ? <Text style={styles.avatarText}>{initials}</Text> : <Ionicons name="person" size={size * 0.5} color="#fff" />}
+      {avatar ? (
+        <Image source={{ uri: avatar }} style={{ width: size, height: size, borderRadius: size / 2 }} accessibilityIgnoresInvertColors />
+      ) : initials ? (
+        <Text style={[styles.avatarText, { fontSize: size * 0.38 }]}>{initials}</Text>
+      ) : (
+        <Ionicons name="person" size={size * 0.5} color="#fff" />
+      )}
     </Pressable>
   );
 }
