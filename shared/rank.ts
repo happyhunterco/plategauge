@@ -59,16 +59,70 @@ const splitCompound = (s: string) =>
   norm(s)
     .replace(/cheeseburger/g, 'cheese burger')
     .replace(/butterburger/g, 'butter burger')
-    .replace(/hamburger/g, 'burger');
+    .replace(/hamburger/g, 'burger')
+    .replace(/hashbrowns?/g, 'hash brown')
+    .replace(/milkshake/g, 'milk shake');
+
+const SEARCH_STOP = new Set(['a', 'an', 'and', 'at', 'by', 'for', 'from', 'in', 'of', 'on', 'the', 'to', 'with']);
+
+const stem = (word: string) => {
+  const irregular: Record<string, string> = { cookies: 'cookie', fries: 'fry', leaves: 'leaf', knives: 'knife' };
+  if (irregular[word]) return irregular[word];
+  if (word.length > 4 && word.endsWith('ies')) return `${word.slice(0, -3)}y`;
+  if (word.length > 4 && /(ches|shes|sses|xes|zes)$/.test(word)) return word.slice(0, -2);
+  if (word.length > 3 && word.endsWith('s')) return word.slice(0, -1);
+  return word;
+};
+
+export function searchWords(text: string): string[] {
+  return splitCompound(text)
+    .split(' ')
+    .map(stem)
+    .filter((word) => word.length > 1 && !SEARCH_STOP.has(word));
+}
 
 export function nameOverlap(query: string, name: string): number {
-  const q = splitCompound(query)
-    .split(' ')
-    .filter((w) => w.length > 1);
+  const q = searchWords(query);
   if (!q.length) return 0;
-  const n = new Set(splitCompound(name).split(' '));
-  const hit = q.filter((w) => n.has(w) || n.has(w.replace(/s$/, '')) || n.has(`${w}s`)).length;
+  const n = new Set(searchWords(name));
+  const hit = q.filter((w) => n.has(w)).length;
   return hit / q.length;
+}
+
+/**
+ * Relevance for every text-search surface. A matching food category is more
+ * important than one shared word, so "cheeseburger" cannot rank a cheese soup
+ * above a burger. The score is intentionally independent of nutrition goals.
+ */
+export function foodSearchScore(query: string, item: Pick<FoodItem, 'name' | 'brand' | 'restaurant' | 'category'>): number {
+  const q = searchWords(query);
+  if (!q.length) return 0;
+  const name = searchWords(item.name);
+  const brand = searchWords(item.brand ?? '');
+  const all = new Set([...name, ...brand]);
+  const hits = q.filter((word) => all.has(word)).length;
+  const coverage = hits / q.length;
+  const precision = hits / Math.max(name.length, 1);
+  let score = coverage * 1_000 + precision * 180;
+
+  const queryPhrase = splitCompound(query);
+  const namePhrase = splitCompound(item.name);
+  if (namePhrase === queryPhrase) score += 1_500;
+  else if (namePhrase.includes(queryPhrase) || queryPhrase.includes(namePhrase)) score += 500;
+
+  const wanted = categoryOf(query);
+  const actual = item.category ?? categoryOf(item.name);
+  if (wanted && actual === wanted) score += 1_200;
+  else if (wanted && actual && NEAR[wanted]?.includes(actual)) score += 150;
+  else if (wanted && actual) score -= 1_000;
+
+  const queryText = ` ${norm(query)} `;
+  const itemText = ` ${norm(item.name)} `;
+  if (wanted === 'burger' && !/\b(veggie|vegetarian|plant|impossible|beyond)\b/.test(queryText) && /\b(veggie|vegetarian|plant|impossible|beyond)\b/.test(itemText)) {
+    score -= 900;
+  }
+
+  return Math.round(score);
 }
 
 export type Scored = { item: FoodItem; score: number; reasons: string[]; fitsAsIs: boolean };

@@ -3,7 +3,7 @@ import type { Customizable, FoodCategory, FoodItem, Selection } from './food';
 import { exactQuery, parseCraving, type Intent } from './intent';
 import { fits, type Budget } from './nutrients';
 import { applyAnswers, nextQuestion, type Question } from './questions';
-import { conflict, nameOverlap, rankCandidates, relevant, type Prefs, type Scored } from './rank';
+import { conflict, foodSearchScore, nameOverlap, rankCandidates, relevant, type Prefs, type Scored } from './rank';
 import { buildCustomizable, type Lookup } from './resolve';
 import { menuRuleFor, norm, restaurantById } from './restaurants';
 import { moodFoods } from './moodFoods';
@@ -62,8 +62,15 @@ function pickExact(intent: Intent, items: FoodItem[]): FoodItem | null {
   let best: { item: FoodItem; s: number } | null = null;
   for (const it of items) {
     if (intent.restaurantId && it.restaurant !== intent.restaurantId) continue;
-    const s = nameOverlap(intent.food, it.name);
-    if (s >= 0.5 && (!best || s > best.s || (s === best.s && it.name.length < best.item.name.length))) best = { item: it, s };
+    const actualCategory = it.category ?? categoryOf(it.name);
+    // Exact means the same kind of food. Similar categories are handled later
+    // and must never replace the thing the user explicitly requested.
+    if (intent.category && actualCategory !== intent.category) continue;
+    const overlap = nameOverlap(intent.food, it.name);
+    const minimum = intent.category ? 0.5 : 0.75;
+    if (overlap < minimum) continue;
+    const s = foodSearchScore(intent.food, it);
+    if (!best || s > best.s || (s === best.s && it.name.length < best.item.name.length)) best = { item: it, s };
   }
   return best?.item ?? null;
 }
