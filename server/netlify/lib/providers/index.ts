@@ -2,7 +2,8 @@ import type { FoodItem, ProviderId, SearchPage } from '../../../../shared/food';
 import { qualityRank } from '../../../../shared/food';
 import { barcodeVariants } from '../../../../shared/barcode';
 import { labelScore, type LabelScore, type ProductSignals } from '../../../../shared/productScore';
-import { norm, restaurantById } from '../../../../shared/restaurants';
+import { foodSearchScore } from '../../../../shared/rank';
+import { findRestaurant, norm, restaurantById } from '../../../../shared/restaurants';
 import { TTLCache, withTimeout } from '../http';
 import { fatsecret } from './fatsecret';
 import { hff } from './hff';
@@ -71,13 +72,16 @@ export async function searchFoods(p: SearchParams): Promise<SearchPage> {
   if (p.kind && p.kind !== 'all') items = items.filter((i) => i.kind === p.kind);
   if (p.brand) items = items.filter((i) => norm(i.brand ?? '').includes(norm(p.brand!)));
 
-  // Relevance: name overlap first, then data quality.
-  const qWords = norm(p.q).split(' ').filter(Boolean);
-  const rel = (i: FoodItem) => {
-    const name = norm(`${i.brand ?? ''} ${i.name}`);
-    return qWords.filter((w) => name.includes(w)).length / Math.max(qWords.length, 1);
-  };
-  items.sort((a, b) => rel(b) - rel(a) || qualityRank(b.source.quality) - qualityRank(a.source.quality) || a.name.length - b.name.length);
+  // Strip a recognized chain from the ranking query. Otherwise every item at
+  // that chain gets points for the brand and weak matches can outrank the food.
+  const found = findRestaurant(p.q);
+  const relevanceQuery = found ? norm(p.q).replace(found.alias, ' ').replace(/\s+/g, ' ').trim() || p.q : p.q;
+  items.sort(
+    (a, b) =>
+      foodSearchScore(relevanceQuery, b) - foodSearchScore(relevanceQuery, a) ||
+      qualityRank(b.source.quality) - qualityRank(a.source.quality) ||
+      a.name.length - b.name.length,
+  );
 
   const page: SearchPage = { items, page: p.page, hasMore: results.some((x) => x.length >= p.pageSize), providers };
   if (providers.some((x) => x.ok)) searchCache.set(key, page);
@@ -116,6 +120,20 @@ export type BarcodeResult = {
   tried: { id: ProviderId; ok: boolean; error?: string }[];
 };
 
+const nutritionCompleteness = (item: FoodItem) =>
+  [item.nutrients.calories, item.nutrients.protein, item.nutrients.carbs, item.nutrients.fat, item.nutrients.fiber, item.nutrients.sugar, item.nutrients.sodium].filter(
+    (value) => value != null,
+  ).length;
+
+export function pickBestBarcodeHit(hits: { hit: { item: FoodItem; signals?: ProductSignals }; order: number }[]) {
+  return [...hits].sort(
+    (a, b) =>
+      qualityRank(b.hit.item.source.quality) - qualityRank(a.hit.item.source.quality) ||
+      nutritionCompleteness(b.hit.item) - nutritionCompleteness(a.hit.item) ||
+      a.order - b.order,
+  )[0]?.hit ?? null;
+}
+
 /** Try every configured database and every barcode form (UPC-A / EAN-13 / GTIN-14 / UPC-E). */
 export async function lookupBarcode(raw: string): Promise<BarcodeResult> {
   const variants = barcodeVariants(raw);
@@ -124,24 +142,29 @@ export async function lookupBarcode(raw: string): Promise<BarcodeResult> {
   if (cached) return cached;
 
   const tried: BarcodeResult['tried'] = [];
-  let item: FoodItem | null = null;
-  let signals: ProductSignals | undefined;
-  for (const pr of configuredProviders().filter((p) => p.barcode)) {
-    try {
-      for (const v of variants) {
-        const hit = await withTimeout(pr.barcode!(v), 5000, pr.id);
-        if (hit) {
-          item = hit.item;
-          signals = hit.signals;
-          break;
+  const barcodeProviders = configuredProviders().filter((p) => p.barcode);
+  const providerResults = await Promise.all(
+    barcodeProviders.map(async (pr, order) => {
+      try {
+        let hit = null;
+        for (const v of variants) {
+          hit = await withTimeout(pr.barcode!(v), 5000, pr.id);
+          if (hit) break;
         }
+        return { tried: { id: pr.id, ok: true } as BarcodeResult['tried'][number], found: hit ? { hit, order } : null };
+      } catch (e) {
+        return {
+          tried: { id: pr.id, ok: false, error: (e as Error).message } as BarcodeResult['tried'][number],
+          found: null,
+        };
       }
-      tried.push({ id: pr.id, ok: true });
-      if (item) break;
-    } catch (e) {
-      tried.push({ id: pr.id, ok: false, error: (e as Error).message });
-    }
-  }
+    }),
+  );
+  tried.push(...providerResults.map((result) => result.tried));
+  const found = providerResults.map((result) => result.found).filter((x): x is NonNullable<typeof x> => !!x);
+  const best = pickBestBarcodeHit(found);
+  let item = best?.item ?? null;
+  let signals = best?.signals;
 
   // Score signals come from Open Food Facts even when nutrition came from elsewhere.
   if (item && item.source.provider !== 'off') {
@@ -150,6 +173,7 @@ export async function lookupBarcode(raw: string): Promise<BarcodeResult> {
       if (p) {
         const s = offSignals(p);
         signals = { ...s, per100g: s.per100g.energyKcal != null ? s.per100g : signals?.per100g };
+        if (!item.image) item = { ...item, image: p.image_front_small_url ?? item.image };
         break;
       }
     }

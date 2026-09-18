@@ -7,7 +7,7 @@ import { OFF_UA, type BarcodeHit, type NutritionProvider, type ProviderSearch } 
  * Also supplies Nutri-Score, NOVA group and additives for the Label Score.
  * Product images are CC BY-SA; the app credits Open Food Facts when showing them.
  */
-type OffProduct = {
+export type OffProduct = {
   code?: string;
   product_name?: string;
   product_name_en?: string;
