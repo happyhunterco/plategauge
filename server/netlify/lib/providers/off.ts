@@ -11,7 +11,9 @@ export type OffProduct = {
   code?: string;
   product_name?: string;
   product_name_en?: string;
-  brands?: string;
+  // The product endpoint normally returns a comma-separated string, while
+  // search occasionally returns an array despite requesting the same field.
+  brands?: string | string[];
   serving_size?: string;
   serving_quantity?: number | string;
   nutriments?: Record<string, number | string>;
@@ -36,10 +38,11 @@ export function offToItem(p: OffProduct): FoodItem | null {
   if (!kcal) return null;
   const sodiumG = g('sodium');
   const grams = hasServing ? num(p.serving_quantity) : 100;
+  const brand = (Array.isArray(p.brands) ? p.brands[0] : typeof p.brands === 'string' ? p.brands.split(',')[0] : '')?.trim() || null;
   const item: FoodItem = {
     id: `off:${p.code}`,
     name,
-    brand: p.brands?.split(',')[0]?.trim() || null,
+    brand,
     kind: 'branded',
     serving:
       hasServing && p.serving_size
