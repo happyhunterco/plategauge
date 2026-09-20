@@ -14,11 +14,13 @@
     <style>
       html, body { height: 100%; margin: 0; background: #fff; }
       body { overflow: hidden; overscroll-behavior: none; }
-      #root { display: flex; height: 100%; flex: 1; }
+      #root { display: flex; height: 100%; flex: 1; position: relative; z-index: 1; }
+      #status-cover { position: fixed; top: 0; left: 0; right: 0; height: env(safe-area-inset-top, 44px); background: #fff; z-index: 9999; }
     </style>
   </head>
   <body>
     <noscript>PlateGauge needs JavaScript to run.</noscript>
+    <div id="status-cover"></div>
     <div id="root"></div>
     <script>
       if ('serviceWorker' in navigator && location.protocol === 'https:' && window.self === window.top) {
