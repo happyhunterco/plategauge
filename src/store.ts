@@ -94,6 +94,7 @@ type State = {
   goals: Goals | null;
   goalsManual: boolean;
   darkMode: boolean;
+  subscription?: { status: string; plan: string | null; current_period_end: number | null } | null;
   set: (partial: Partial<State>) => void;
   settings: Settings;
   account: Account | null;

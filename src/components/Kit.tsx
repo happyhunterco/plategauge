@@ -10,6 +10,7 @@ import type { Quality, SourceInfo } from '../../shared/food';
 import { QUALITY_LABEL } from '../../shared/food';
 import { fmt, useStreak } from '../hooks';
 import { useStore } from '../store';
+import { dark as darkColors } from '../theme';
 import { color, font, shadow, space } from '../theme';
 import { LogoMark } from './Logo';
 import { Group, tap, type IconName } from './UI';
@@ -177,6 +178,7 @@ export function StreakChip() {
 export function TopBar({ title, max = CONTENT }: { title?: string; max?: number }) {
   const insets = useSafeAreaInsets();
   const wide = useWide();
+  const dm = useStore((s) => s.darkMode);
   if (wide) {
     return (
       <View style={[styles.topWide, { maxWidth: max }]}>
@@ -187,7 +189,7 @@ export function TopBar({ title, max = CONTENT }: { title?: string; max?: number 
     );
   }
   return (
-    <View style={[styles.topBar, { paddingTop: insets.top + 6 }]}>
+    <View style={[styles.topBar, { paddingTop: insets.top + 6, backgroundColor: dm ? '#0E1117' : '#fff' }]}>
       <View style={styles.topLeft}>
         <LogoMark size={32} />
         <Text style={styles.topTitle} accessibilityRole="header">

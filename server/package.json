@@ -11,5 +11,8 @@
   "scripts": {
     "typecheck": "tsc -p tsconfig.json",
     "bundle-check": "node scripts/bundle-check.mjs"
+  },
+  "dependencies": {
+    "stripe": "^22.6.2"
   }
 }

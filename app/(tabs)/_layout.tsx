@@ -7,6 +7,8 @@ import { tap, type IconName } from '../../src/components/UI';
 import { Avatar, StreakChip } from '../../src/components/Kit';
 import { LogoMark } from '../../src/components/Logo';
 import { SIDEBAR, useWide } from '../../src/layout';
+import { dark } from '../../src/theme';
+import { useStore } from '../../src/store';
 import { color, font } from '../../src/theme';
 
 const TABS: Record<string, { label: string; icon: IconName; on: IconName }> = {
@@ -17,6 +19,7 @@ const TABS: Record<string, { label: string; icon: IconName; on: IconName }> = {
 };
 
 function TabBar({ state, navigation }: BottomTabBarProps) {
+  const dm = useStore((s) => s.darkMode);
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const item = (i: number) => {
@@ -67,9 +70,10 @@ function TabBar({ state, navigation }: BottomTabBarProps) {
 }
 
 function SideBar({ state, navigation }: BottomTabBarProps) {
+  const dm = useStore((s) => s.darkMode);
   const router = useRouter();
   return (
-    <View style={side.bar} accessibilityRole="tablist">
+    <View style={[side.bar, dm && { backgroundColor: '#0E1117', borderRightColor: '#1E2430' }]} accessibilityRole="tablist">
       <View style={side.brand}>
         <LogoMark size={34} />
         <Text style={side.brandText}>PlateGauge</Text>

@@ -10,6 +10,7 @@ import { UndoToast } from '../src/components/Kit';
 import { authMode, watchSession } from '../src/services/auth';
 import { flushUnsynced } from '../src/services/sync';
 import { useStore } from '../src/store';
+import { dark } from '../src/theme';
 import { color, font } from '../src/theme';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
@@ -17,6 +18,7 @@ SplashScreen.preventAutoHideAsync().catch(() => {});
 export default function RootLayout() {
   const [fontsLoaded] = useFonts({ Lexend_500Medium, Lexend_600SemiBold, Lexend_700Bold });
   const hydrated = useStore((s) => s.hydrated);
+  const dm = useStore((s) => s.darkMode);
   const authReady = useStore((s) => s.authReady);
   const onboarded = useStore((s) => !!s.profile && !!s.goals);
   const account = useStore((s) => s.account);

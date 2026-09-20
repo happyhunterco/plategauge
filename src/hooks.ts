@@ -82,3 +82,8 @@ export function useColors() {
   const dm = useStore((s) => s.darkMode);
   return dm ? darkColor : lightColor;
 }
+
+export function useIsPro() {
+  const sub = useStore((s) => s.subscription);
+  return sub?.status === 'active' || sub?.status === 'trialing';
+}

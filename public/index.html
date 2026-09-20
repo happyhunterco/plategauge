@@ -2,12 +2,12 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#ffffff" />
     <meta name="description" content="Calorie and macro tracker. Tell it what you’re hungry for and see how to make it fit." />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-title" content="PlateGauge" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <link rel="manifest" href="/manifest.webmanifest" />
     <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
     <title>PlateGauge</title>
@@ -15,12 +15,10 @@
       html, body { height: 100%; margin: 0; background: #fff; }
       body { overflow: hidden; overscroll-behavior: none; }
       #root { display: flex; height: 100%; flex: 1; position: relative; z-index: 1; }
-      #status-cover { position: fixed; top: 0; left: 0; right: 0; height: env(safe-area-inset-top, 44px); background: #fff; z-index: 9999; }
     </style>
   </head>
   <body>
     <noscript>PlateGauge needs JavaScript to run.</noscript>
-    <div id="status-cover"></div>
     <div id="root"></div>
     <script>
       if ('serviceWorker' in navigator && location.protocol === 'https:' && window.self === window.top) {

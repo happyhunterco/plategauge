@@ -1,5 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { requirePro } from '../../src/gate';
 import { useMemo, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import type { CraveResult, ExactResult } from '../../shared/crave';
