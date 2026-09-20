@@ -55,7 +55,7 @@ export default function Scan() {
     if (perm && !perm.granted && perm.canAskAgain) {
       requestPerm();
     }
-  }, []);  // eslint-disable-line react-hooks/exhaustive-deps
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // If nothing scans after a while, suggest light or typing the number.
   useEffect(() => {

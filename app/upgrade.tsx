@@ -23,7 +23,10 @@ export default function Upgrade() {
   const account = useStore((s) => s.account);
 
   const checkout = async () => {
-    if (!account) { router.push('/account'); return; }
+    if (!account) {
+      router.push('/account');
+      return;
+    }
     setLoading(true);
     try {
       const { url } = await api<{ url: string }>('/api/checkout', {
@@ -62,9 +65,13 @@ export default function Upgrade() {
           >
             <View style={styles.planTop}>
               <Text style={[styles.planName, plan === 'annual' && { color: '#fff' }]}>Annual</Text>
-              <View style={styles.saveBadge}><Text style={styles.saveText}>Save 40%</Text></View>
+              <View style={styles.saveBadge}>
+                <Text style={styles.saveText}>Save 40%</Text>
+              </View>
             </View>
-            <Text style={[styles.planPrice, plan === 'annual' && { color: '#fff' }]}>$49.99<Text style={styles.planPer}>/year</Text></Text>
+            <Text style={[styles.planPrice, plan === 'annual' && { color: '#fff' }]}>
+              $49.99<Text style={styles.planPer}>/year</Text>
+            </Text>
             <Text style={[styles.planBreak, plan === 'annual' && { color: 'rgba(255,255,255,0.6)' }]}>$4.17/mo</Text>
           </Pressable>
 
@@ -75,7 +82,9 @@ export default function Upgrade() {
             accessibilityState={{ selected: plan === 'monthly' }}
           >
             <Text style={[styles.planName, plan === 'monthly' && { color: '#fff' }]}>Monthly</Text>
-            <Text style={[styles.planPrice, plan === 'monthly' && { color: '#fff' }]}>$6.99<Text style={styles.planPer}>/month</Text></Text>
+            <Text style={[styles.planPrice, plan === 'monthly' && { color: '#fff' }]}>
+              $6.99<Text style={styles.planPer}>/month</Text>
+            </Text>
           </Pressable>
         </View>
 

@@ -126,17 +126,25 @@ export type BarcodeResult = {
 };
 
 const nutritionCompleteness = (item: FoodItem) =>
-  [item.nutrients.calories, item.nutrients.protein, item.nutrients.carbs, item.nutrients.fat, item.nutrients.fiber, item.nutrients.sugar, item.nutrients.sodium].filter(
-    (value) => value != null,
-  ).length;
+  [
+    item.nutrients.calories,
+    item.nutrients.protein,
+    item.nutrients.carbs,
+    item.nutrients.fat,
+    item.nutrients.fiber,
+    item.nutrients.sugar,
+    item.nutrients.sodium,
+  ].filter((value) => value != null).length;
 
 export function pickBestBarcodeHit(hits: { hit: { item: FoodItem; signals?: ProductSignals }; order: number }[]) {
-  return [...hits].sort(
-    (a, b) =>
-      qualityRank(b.hit.item.source.quality) - qualityRank(a.hit.item.source.quality) ||
-      nutritionCompleteness(b.hit.item) - nutritionCompleteness(a.hit.item) ||
-      a.order - b.order,
-  )[0]?.hit ?? null;
+  return (
+    [...hits].sort(
+      (a, b) =>
+        qualityRank(b.hit.item.source.quality) - qualityRank(a.hit.item.source.quality) ||
+        nutritionCompleteness(b.hit.item) - nutritionCompleteness(a.hit.item) ||
+        a.order - b.order,
+    )[0]?.hit ?? null
+  );
 }
 
 /** Try every configured database and every barcode form (UPC-A / EAN-13 / GTIN-14 / UPC-E). */

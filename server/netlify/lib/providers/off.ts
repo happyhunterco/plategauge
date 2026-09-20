@@ -45,10 +45,9 @@ export function offToItem(p: OffProduct): FoodItem | null {
     name,
     brand,
     kind: 'branded',
-    serving:
-      hasServing
-        ? { description: packagedServing, quantity: 1, unit: 'serving', grams }
-        : { description: '100 g', quantity: 100, unit: 'g', grams: 100 },
+    serving: hasServing
+      ? { description: packagedServing, quantity: 1, unit: 'serving', grams }
+      : { description: '100 g', quantity: 100, unit: 'g', grams: 100 },
     nutrients: nutrients(kcal, g('proteins'), g('carbohydrates'), g('fat'), {
       fiber: g('fiber'),
       sugar: g('sugars'),

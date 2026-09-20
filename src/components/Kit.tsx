@@ -49,7 +49,17 @@ export function QualityBadge({ quality, small }: { quality: Quality; small?: boo
 }
 
 /** A quiet source/serving line. Pass a label to favor a consumer-facing company name. */
-export function SourceLine({ source, serving, label, showProvider = true }: { source: SourceInfo; serving?: string; label?: string | null; showProvider?: boolean }) {
+export function SourceLine({
+  source,
+  serving,
+  label,
+  showProvider = true,
+}: {
+  source: SourceInfo;
+  serving?: string;
+  label?: string | null;
+  showProvider?: boolean;
+}) {
   const range = source.range ? `${fmt(source.range.low)}–${fmt(source.range.high)} cal likely` : null;
   return (
     <View style={styles.sourceLine}>
@@ -154,7 +164,12 @@ export function Avatar({ size = 36 }: { size?: number }) {
       style={[styles.avatar, { width: size, height: size, borderRadius: size / 2 }]}
     >
       {avatar ? (
-        <Image source={{ uri: avatar }} style={{ width: size - 2, height: size - 2, borderRadius: (size - 2) / 2 }} resizeMode="cover" accessibilityIgnoresInvertColors />
+        <Image
+          source={{ uri: avatar }}
+          style={{ width: size - 2, height: size - 2, borderRadius: (size - 2) / 2 }}
+          resizeMode="cover"
+          accessibilityIgnoresInvertColors
+        />
       ) : initials ? (
         <Text style={[styles.avatarText, { fontSize: size * 0.38 }]}>{initials}</Text>
       ) : (

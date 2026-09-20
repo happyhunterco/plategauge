@@ -15,6 +15,8 @@ import { color, font, space } from '../src/theme';
 export default function Account() {
   const params = useLocalSearchParams<{ mode?: 'signin' | 'signup' }>();
   const router = useRouter();
+  const { checkout } = useLocalSearchParams<{ checkout?: string }>();
+  const account = useStore((s) => s.account);
   const insets = useSafeAreaInsets();
   const onboarded = useStore((s) => !!s.profile);
   const [mode, setMode] = useState<'signup' | 'signin'>(params.mode ?? (onboarded ? 'signup' : 'signin'));

@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { requirePro } from '../../src/gate';
+import { useIsPro } from '../../src/hooks';
 import { useMemo, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import type { CraveResult, ExactResult } from '../../shared/crave';
@@ -197,7 +197,9 @@ export default function Crave() {
                       />
                     ))}
                   </View>
-                  <Text style={styles.muted}>{visibleMenu.length} menu item{visibleMenu.length === 1 ? '' : 's'}</Text>
+                  <Text style={styles.muted}>
+                    {visibleMenu.length} menu item{visibleMenu.length === 1 ? '' : 's'}
+                  </Text>
                   {visibleMenu.length ? (
                     <View style={{ gap: space.m }}>
                       {visibleMenu.map((item) => (
@@ -445,7 +447,19 @@ function SimilarCard({ s, left, loading, onLog, onCustomize }: { s: Scored; left
   );
 }
 
-function MenuItemCard({ item, left, loading, onLog, onCustomize }: { item: FoodItem; left: Left; loading: boolean; onLog: () => void; onCustomize: () => void }) {
+function MenuItemCard({
+  item,
+  left,
+  loading,
+  onLog,
+  onCustomize,
+}: {
+  item: FoodItem;
+  left: Left;
+  loading: boolean;
+  onLog: () => void;
+  onCustomize: () => void;
+}) {
   return (
     <Card>
       <View style={styles.simHead}>

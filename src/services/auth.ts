@@ -51,6 +51,18 @@ export async function signUp(email: string, password: string) {
   return { needsConfirmation: false as const };
 }
 
+export async function syncSubscription(userId: string) {
+  try {
+    const { subscription } = await api<{ subscription: { status: string; plan: string | null; current_period_end: number | null } | null }>(
+      '/api/subscription-status',
+      { method: 'POST', body: JSON.stringify({ userId }) },
+    );
+    useStore.getState().set({ subscription });
+  } catch (e) {
+    console.warn('subscription sync failed', e);
+  }
+}
+
 export async function signIn(email: string, password: string) {
   requireAuth();
   if (authMode === 'development') return afterSignIn(`dev-${email}`, email, 'email');

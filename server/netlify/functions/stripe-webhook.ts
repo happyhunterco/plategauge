@@ -5,17 +5,17 @@ import { createClient } from '@supabase/supabase-js';
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', { apiVersion: '2024-12-18.acacia' as any });
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET || '';
 
-const supabase = createClient(
-  process.env.SUPABASE_URL || '',
-  process.env.SUPABASE_SERVICE_ROLE_KEY || '',
-);
+const supabase = createClient(process.env.SUPABASE_URL || '', process.env.SUPABASE_SERVICE_ROLE_KEY || '');
 
 async function updateSubscription(userId: string, status: string, plan: string | null, currentPeriodEnd: number | null) {
-  await supabase.from('profiles').upsert({
-    id: userId,
-    subscription: { status, plan, current_period_end: currentPeriodEnd },
-    updated_at: new Date().toISOString(),
-  }, { onConflict: 'id' });
+  await supabase.from('profiles').upsert(
+    {
+      id: userId,
+      subscription: { status, plan, current_period_end: currentPeriodEnd },
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: 'id' },
+  );
 }
 
 export const handler: Handler = async (event) => {
