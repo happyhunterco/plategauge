@@ -107,6 +107,13 @@ export default function Profile() {
         </View>
       </View>
 
+      <Section title="Appearance">
+        <View style={styles.toggleRow}>
+          <Text style={styles.toggleLabel}>Dark mode</Text>
+          <Switch value={s.darkMode} onValueChange={(v) => useStore.getState().set({ darkMode: v } as any)} trackColor={{ true: color.gauge }} />
+        </View>
+      </Section>
+
       <Section title="Your info">
         <Field label="Display name" value={name} onChangeText={setName} onBlur={() => saveName()} placeholder="Your name" />
         <Field
@@ -382,6 +389,8 @@ export default function Profile() {
 }
 
 const styles = StyleSheet.create({
+  toggleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 4 },
+  toggleLabel: { fontSize: 16, color: color.ink },
   head: { flexDirection: 'row', alignItems: 'center', gap: space.l, paddingHorizontal: space.l, paddingTop: space.m },
   avatarWrap: { width: 72, height: 72 },
   avatarImg: { width: 72, height: 72, borderRadius: 36, backgroundColor: color.wash },

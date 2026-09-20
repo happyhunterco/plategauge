@@ -47,3 +47,25 @@ export const type = {
   small: { fontSize: 13, color: color.sub },
   num: { fontFamily: font.display, color: color.ink, fontVariant: ['tabular-nums' as const] },
 };
+
+/** Dark-mode palette. Every key matches `color` so components can swap cleanly. */
+export const dark = {
+  ink: '#F0F4FA',
+  ink2: '#D8E0EC',
+  gauge: '#1592FF',
+  gauge2: '#57B4FF',
+  needle: '#F59A1E',
+  plate: '#1A1F2B',
+  rim: '#2E3544',
+  wash: '#141820',
+  wash2: '#1C212E',
+  sub: '#8A95AA',
+  faint: '#5A6578',
+  line: '#252C3A',
+  lineSoft: '#1E2430',
+  danger: '#E85C55',
+  success: '#2FAF7A',
+  protein: '#1592FF',
+  carbs: '#8AB4E8',
+  fat: '#F59A1E',
+};

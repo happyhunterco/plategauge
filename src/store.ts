@@ -93,6 +93,8 @@ type State = {
   profile: Profile | null;
   goals: Goals | null;
   goalsManual: boolean;
+  darkMode: boolean;
+  set: (partial: Partial<State>) => void;
   settings: Settings;
   account: Account | null;
   entries: Entry[];
@@ -176,6 +178,7 @@ const EMPTY = {
   recentSearches: [],
   pantry: [],
   aiConsent: null,
+  darkMode: false,
   unsynced: [],
 };
 
@@ -187,6 +190,7 @@ export const useStore = create<State>()(
       drafts: [],
       draftMeal: null,
       hydrated: false,
+      set: (partial) => set(partial),
       authReady: false,
       recovery: false,
       lastUndo: null,
@@ -202,6 +206,7 @@ export const useStore = create<State>()(
           profile,
           goals,
           goalsManual: false,
+          darkMode: false,
           weights: [...weights, { date: today, lb: profile.weightLb, createdAt: Date.now() }].sort((a, b) => a.date.localeCompare(b.date)),
         });
       },
@@ -385,6 +390,7 @@ export function migrate(s: Record<string, unknown>, version: number) {
     profile: p ? { name: '', restrictions: [], allergies: [], favoriteRestaurants: [], ratePerWeek: p.goal === 'maintain' ? 0 : 1, ...p } : null,
     goals: g ? { ...g, fiber: Math.round((g.calories / 1000) * 14) } : null,
     goalsManual: false,
+    darkMode: false,
     settings: DEFAULT_SETTINGS,
     entries,
     weights: ((s.weights as { date: string; lb: number }[]) ?? []).map((w) => ({ ...w, createdAt: 0 })),

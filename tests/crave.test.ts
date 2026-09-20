@@ -120,3 +120,15 @@ describe('mood cravings never come back empty (live-site conditions)', () => {
     expect(r.similar.some((s) => /yogurt|smoothie|ice cream|frozen/i.test(s.item.name))).toBe(true);
   });
 });
+
+
+describe('search ranking: exact food beats coincidental word overlap', () => {
+  it('"cheeseburger" ranks a real burger above broccoli cheese soup', () => {
+    const intent = parseCraving('Culver\'s cheeseburger');
+    const burger = { ...DEV_FOODS.find((f) => f.name === 'ButterBurger Cheese Single')! };
+    const soup = { ...burger, id: 'fake:soup', name: 'Broccoli Cheese Soup', category: 'soup' as const };
+    const a = scoreCandidate(intent, burger, roomy, { exact: true });
+    const b = scoreCandidate(intent, soup, roomy);
+    expect(a.score).toBeGreaterThan(b.score);
+  });
+});

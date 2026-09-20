@@ -14,6 +14,7 @@ import type { NutritionProvider, ProviderSearch } from './types';
 
 /** Our restaurant ids (shared/restaurants.ts) → healthyfastfood.org slugs. */
 const SLUG: Record<string, string> = {
+  // Big 20
   mcdonalds: 'mcdonalds',
   burger_king: 'burger-king',
   wendys: 'wendys',
@@ -33,6 +34,72 @@ const SLUG: Record<string, string> = {
   raising_canes: 'raising-canes',
   panda_express: 'panda-express',
   dairy_queen: 'dairy-queen',
+  // Extended coverage
+  kfc: 'kfc',
+  popeyes: 'popeyes',
+  arbys: 'arbys',
+  sonic: 'sonic',
+  jack_in_the_box: 'jack-in-the-box',
+  whataburger: 'whataburger',
+  wingstop: 'wingstop',
+  jimmy_johns: 'jimmy-johns',
+  firehouse_subs: 'firehouse-subs',
+  portillos: 'portillos',
+  del_taco: 'del-taco',
+  el_pollo_loco: 'el-pollo-loco',
+  zaxbys: 'zaxbys',
+  bojangles: 'bojangles',
+  hardees: 'hardees',
+  carls_jr: 'carls-jr',
+  checkers: 'checkers-rallys',
+  tropical_smoothie: 'tropical-smoothie-cafe',
+  smoothie_king: 'smoothie-king',
+  jamba: 'jamba',
+  dunkin: 'dunkin',
+  krispy_kreme: 'krispy-kreme',
+  tim_hortons: 'tim-hortons',
+  mcalisters: 'mcalisters-deli',
+  jason_deli: 'jason-deli',
+  potbelly: 'potbelly',
+  qdoba: 'qdoba',
+  moes: 'moes-southwest-grill',
+  wawa: 'wawa',
+  sheetz: 'sheetz',
+  chilis: 'chilis',
+  applebees: 'applebees',
+  buffalo_wild_wings: 'buffalo-wild-wings',
+  dennys: 'dennys',
+  ihop: 'ihop',
+  waffle_house: 'waffle-house',
+  cracker_barrel: 'cracker-barrel',
+  olive_garden: 'olive-garden',
+  red_lobster: 'red-lobster',
+  outback: 'outback-steakhouse',
+  texas_roadhouse: 'texas-roadhouse',
+  chipotle_mexican: 'chipotle-mexican-grill',
+  noodles_co: 'noodles-and-company',
+  papa_johns: 'papa-johns',
+  little_caesars: 'little-caesars',
+  marcos: 'marcos-pizza',
+  hungry_howies: 'hungry-howies',
+  fazolis: 'fazolis',
+  long_john_silvers: 'long-john-silvers',
+  captain_ds: 'captain-ds',
+  white_castle: 'white-castle',
+  krystal: 'krystal',
+  cookout: 'cook-out',
+  freddy: 'freddys',
+  smashburger: 'smashburger',
+  steak_n_shake: 'steak-n-shake',
+  rallys: 'checkers-rallys',
+  church: 'churchs-chicken',
+  golden_corral: 'golden-corral',
+  boston_market: 'boston-market',
+  pollo_tropical: 'pollo-tropical',
+  mod_pizza: 'mod-pizza',
+  blaze_pizza: 'blaze-pizza',
+  cicis: 'cicis-pizza',
+  round_table: 'round-table-pizza',
 };
 
 type HffItem = {
@@ -100,8 +167,7 @@ export const hff: NutritionProvider = {
     // for every caller in this app — Crave, Build It, and restaurant-filtered Log search.
     const found = findRestaurant(s.query);
     if (!found) return [];
-    const slug = SLUG[found.restaurant.id];
-    if (!slug) return [];
+    const slug = SLUG[found.restaurant.id] || found.restaurant.id.replace(/_/g, '-');
     const items = await fetchMenu(slug);
     const brandWords = new Set(norm(found.restaurant.name).split(' '));
     const residual = norm(s.query)

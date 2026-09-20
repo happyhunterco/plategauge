@@ -62,13 +62,21 @@ const splitCompound = (s: string) =>
     .replace(/hamburger/g, 'burger');
 
 export function nameOverlap(query: string, name: string): number {
+  const qRaw = norm(query);
+  const nRaw = norm(name);
+  // Exact substring match is the strongest signal: "cheeseburger" inside
+  // "ButterBurger Cheese Double" should always beat "cheese" inside "Broccoli Cheese Soup."
+  if (nRaw.includes(qRaw) || qRaw.includes(nRaw)) return 1;
   const q = splitCompound(query)
     .split(' ')
     .filter((w) => w.length > 1);
   if (!q.length) return 0;
   const n = new Set(splitCompound(name).split(' '));
   const hit = q.filter((w) => n.has(w) || n.has(w.replace(/s$/, '')) || n.has(`${w}s`)).length;
-  return hit / q.length;
+  // Bonus: if the original unsplit query matches as a substring of the name (e.g.
+  // "burger" inside "ButterBurger"), rank much higher than a coincidental word overlap.
+  const subBonus = nRaw.includes(qRaw.replace(/\s+/g, '')) ? 0.3 : 0;
+  return Math.min(hit / q.length + subBonus, 1);
 }
 
 export type Scored = { item: FoodItem; score: number; reasons: string[]; fitsAsIs: boolean };
