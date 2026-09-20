@@ -5,6 +5,7 @@ import { runCrave, type CraveDeps, type CraveInput, type CraveResult } from '../
 import { buildCustomizable } from '../../shared/resolve';
 import { barcodeVariants } from '../../shared/barcode';
 import { labelScore, type LabelScore } from '../../shared/productScore';
+import { foodSearchScore } from '../../shared/rank';
 import { DEV_BARCODES, devLookup, devSearch } from '../../shared/dev/fixtures';
 import { offProduct, offSignals, offToItem } from '../../server/netlify/lib/providers/off';
 import { OFF_UA } from '../../server/netlify/lib/providers/types';
@@ -38,7 +39,10 @@ async function offSearch(q: string, page: number, signal?: AbortSignal): Promise
   });
   if (!res.ok) throw new ApiError('Food search is unavailable right now.', 'off');
   const data = (await res.json()) as { hits?: Parameters<typeof offToItem>[0][] };
-  const items = (data.hits ?? []).map(offToItem).filter((x): x is FoodItem => !!x);
+  const items = (data.hits ?? [])
+    .map(offToItem)
+    .filter((x): x is FoodItem => !!x)
+    .sort((a, b) => foodSearchScore(q, b) - foodSearchScore(q, a) || a.name.length - b.name.length);
   return { items, page, hasMore: items.length >= 20, providers: [{ id: 'off', ok: true }] };
 }
 

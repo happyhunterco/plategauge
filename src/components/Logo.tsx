@@ -20,7 +20,7 @@ export function LogoMark({ size = 28 }: { size?: number }) {
   const [nx1, ny1] = n(45, 38.4);
   const [nx2, ny2] = n(45, 50.5);
   return (
-    <Svg width={size} height={size} viewBox="-4 -4 108 108">
+    <Svg width={size} height={size} viewBox="0 0 100 100">
       <Circle cx={50} cy={50} r={39.7} stroke={color.ink} strokeWidth={10} fill={color.plate} />
       <Path d={arc(50, 50, 39.7, 0, 126)} stroke={color.gauge} strokeWidth={10} strokeLinecap="round" fill="none" />
       <Circle cx={50} cy={50} r={25.9} stroke={color.rim} strokeWidth={1.9} fill="none" />

@@ -1,4 +1,5 @@
 import type { FoodItem, Nutrients } from '../food';
+import { foodSearchScore } from '../rank';
 import { categoryOf } from '../tags';
 
 /**
@@ -81,24 +82,10 @@ export const DEV_BARCODES: Record<string, { item: FoodItem; signals: import('../
 };
 
 export function devSearch(q: string, restaurantId?: string | null): FoodItem[] {
-  const words = q
-    .toLowerCase()
-    .replace(/[’']/g, '')
-    .split(/\s+/)
-    .filter((w) => w.length > 1)
-    .flatMap((w) => (w === 'cheeseburger' ? ['cheese', 'burger'] : w === 'butterburger' ? ['burger'] : [w]));
-  if (!words.length) return [];
   return DEV_FOODS.filter((f) => !restaurantId || f.restaurant === restaurantId)
-    .map((f) => {
-      const name = f.name
-        .toLowerCase()
-        .replace(/butterburger/g, 'butterburger burger')
-        .replace(/cheeseburger/g, 'cheeseburger cheese burger');
-      const hits = words.filter((w) => name.includes(w) || name.includes(w.replace(/s$/, ''))).length;
-      return { f, hits };
-    })
-    .filter((x) => x.hits > 0)
-    .sort((a, b) => b.hits - a.hits || a.f.name.length - b.f.name.length)
+    .map((f) => ({ f, score: foodSearchScore(q, f) }))
+    .filter((x) => x.score > 0)
+    .sort((a, b) => b.score - a.score || a.f.name.length - b.f.name.length)
     .map((x) => x.f);
 }
 

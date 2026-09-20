@@ -54,9 +54,9 @@ export function fdcToItem(f: FdcFood): FoodItem | null {
     kind: branded ? 'branded' : 'generic',
     serving: grams
       ? {
-          description: f.householdServingFullText
-            ? `${f.householdServingFullText} (${Math.round(grams)} ${f.servingSizeUnit?.toLowerCase().startsWith('m') ? 'ml' : 'g'})`
-            : `${Math.round(grams)} g`,
+          // Keep the weight for calculations, but show the package's natural
+          // household unit. A raw gram weight is not useful as a serving label.
+          description: f.householdServingFullText?.trim() || friendlyPackagedServing(name),
           quantity: 1,
           unit: 'serving',
           grams,
@@ -73,6 +73,17 @@ export function fdcToItem(f: FdcFood): FoodItem | null {
     },
   };
   return withRestaurant(item, !!chain);
+}
+
+function friendlyPackagedServing(name: string): string {
+  const value = name.toLowerCase();
+  if (/\b(protein|granola|energy|snack|candy) bar\b|\bbar\b/.test(value)) return '1 bar';
+  if (/\bshake\b/.test(value)) return '1 shake';
+  if (/\byogurt\b/.test(value)) return '1 container';
+  if (/\bcookie\b/.test(value)) return '1 cookie';
+  if (/\bbottle\b/.test(value)) return '1 bottle';
+  if (/\bcan\b/.test(value)) return '1 can';
+  return '1 serving';
 }
 
 async function fdcSearch(body: Record<string, unknown>): Promise<FdcFood[]> {

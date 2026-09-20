@@ -47,14 +47,16 @@ export function QualityBadge({ quality, small }: { quality: Quality; small?: boo
   );
 }
 
-/** "Label data · Open Food Facts · 1 bar (40 g)" in one quiet line. */
-export function SourceLine({ source, serving }: { source: SourceInfo; serving?: string }) {
+/** A quiet source/serving line. Pass a label to favor a consumer-facing company name. */
+export function SourceLine({ source, serving, label, showProvider = true }: { source: SourceInfo; serving?: string; label?: string | null; showProvider?: boolean }) {
   const range = source.range ? `${fmt(source.range.low)}–${fmt(source.range.high)} cal likely` : null;
   return (
     <View style={styles.sourceLine}>
       <QualityBadge quality={source.quality} small />
       <Text style={styles.sourceText} numberOfLines={1}>
-        {[PROVIDER_NAME[source.provider], serving, range, source.confidence ? `${source.confidence} confidence` : null].filter(Boolean).join('  ·  ')}
+        {[label || (showProvider ? PROVIDER_NAME[source.provider] : null), serving, range, source.confidence ? `${source.confidence} confidence` : null]
+          .filter(Boolean)
+          .join('  ·  ')}
       </Text>
     </View>
   );
@@ -151,7 +153,7 @@ export function Avatar({ size = 36 }: { size?: number }) {
       style={[styles.avatar, { width: size, height: size, borderRadius: size / 2 }]}
     >
       {avatar ? (
-        <Image source={{ uri: avatar }} style={{ width: size, height: size, borderRadius: size / 2 }} accessibilityIgnoresInvertColors />
+        <Image source={{ uri: avatar }} style={{ width: size - 2, height: size - 2, borderRadius: (size - 2) / 2 }} resizeMode="cover" accessibilityIgnoresInvertColors />
       ) : initials ? (
         <Text style={[styles.avatarText, { fontSize: size * 0.38 }]}>{initials}</Text>
       ) : (
@@ -187,7 +189,7 @@ export function TopBar({ title, max = CONTENT }: { title?: string; max?: number 
   return (
     <View style={[styles.topBar, { paddingTop: insets.top + 6 }]}>
       <View style={styles.topLeft}>
-        <LogoMark size={28} />
+        <LogoMark size={32} />
         <Text style={styles.topTitle} accessibilityRole="header">
           {title ?? 'PlateGauge'}
         </Text>
@@ -267,7 +269,7 @@ const styles = StyleSheet.create({
     borderColor: color.line,
   },
   choiceText: { fontSize: 16, fontWeight: '600', color: color.ink, textAlign: 'center' },
-  avatar: { backgroundColor: color.ink, alignItems: 'center', justifyContent: 'center', ...shadow.soft },
+  avatar: { backgroundColor: color.ink, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: color.line },
   avatarText: { color: '#fff', fontFamily: font.display, fontSize: 14 },
   streak: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, height: 34, borderRadius: 17, backgroundColor: color.wash },
   streakText: { fontFamily: font.display, fontSize: 15, color: color.ink },

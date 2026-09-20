@@ -3,7 +3,7 @@ import type { Customizable, FoodCategory, FoodItem, Selection } from './food';
 import { exactQuery, parseCraving, type Intent } from './intent';
 import { fits, type Budget } from './nutrients';
 import { applyAnswers, nextQuestion, type Question } from './questions';
-import { conflict, nameOverlap, rankCandidates, relevant, type Prefs, type Scored } from './rank';
+import { conflict, foodSearchScore, nameOverlap, rankCandidates, relevant, type Prefs, type Scored } from './rank';
 import { buildCustomizable, type Lookup } from './resolve';
 import { menuRuleFor, norm, restaurantById } from './restaurants';
 import { moodFoods } from './moodFoods';
@@ -14,6 +14,8 @@ export type SearchOpts = { restaurantId?: string | null; restaurantName?: string
 export type CraveDeps = {
   search: (q: string, o: SearchOpts) => Promise<FoodItem[]>;
   lookup: Lookup;
+  /** Server-only directory fallback for chains outside the curated builder list. */
+  restaurant?: (text: string) => { id: string; name: string; alias: string } | null;
   /** Optional: AI suggestions for mood cravings. Must return items labeled 'estimate'. */
   ideas?: (intent: Intent, left: Budget) => Promise<FoodItem[]>;
 };
@@ -40,6 +42,8 @@ export type CraveResult = {
   /** Hide substitutes when the exact item (or a tweak of it) already works */
   showSimilar: boolean;
   blocked: { item: FoodItem; reason: string }[];
+  /** Full restaurant menu shown when the user names a chain without an item. */
+  menu?: FoodItem[];
 };
 
 const MOOD_QUERIES: { when: (i: Intent) => boolean; queries: string[] }[] = [
@@ -62,8 +66,15 @@ function pickExact(intent: Intent, items: FoodItem[]): FoodItem | null {
   let best: { item: FoodItem; s: number } | null = null;
   for (const it of items) {
     if (intent.restaurantId && it.restaurant !== intent.restaurantId) continue;
-    const s = nameOverlap(intent.food, it.name);
-    if (s >= 0.5 && (!best || s > best.s || (s === best.s && it.name.length < best.item.name.length))) best = { item: it, s };
+    const actualCategory = it.category ?? categoryOf(it.name);
+    // Exact means the same kind of food. Similar categories are handled later
+    // and must never replace the thing the user explicitly requested.
+    if (intent.category && actualCategory !== intent.category) continue;
+    const overlap = nameOverlap(intent.food, it.name);
+    const minimum = intent.category ? 0.5 : 0.75;
+    if (overlap < minimum) continue;
+    const s = foodSearchScore(intent.food, it);
+    if (!best || s > best.s || (s === best.s && it.name.length < best.item.name.length)) best = { item: it, s };
   }
   return best?.item ?? null;
 }
@@ -99,11 +110,35 @@ export function selectionFromIntent(c: Customizable, intent: Intent): Selection 
 
 export async function runCrave(input: CraveInput, deps: CraveDeps): Promise<CraveResult> {
   const answers = input.answers ?? {};
-  const intent = applyAnswers(parseCraving(input.text), answers);
+  let parsed = parseCraving(input.text);
+  if (!parsed.restaurantId && deps.restaurant) {
+    const found = deps.restaurant(input.text);
+    if (found) {
+      const withoutChain = norm(input.text).replace(found.alias, ' ').replace(/\s+/g, ' ').trim();
+      parsed = { ...parseCraving(withoutChain), raw: input.text.trim(), restaurantId: found.id, restaurantName: found.name };
+    }
+  }
+  const intent = applyAnswers(parsed, answers);
   const answered = Object.keys(answers);
   const r = restaurantById(intent.restaurantId);
   const rule = r ? menuRuleFor(r.id, intent.food) : null;
   const ctx = { answered, exactFound: false, hasCheeseVariant: !!rule?.pickVariant, hasSizes: false };
+
+  // A chain by itself opens its real menu instead of forcing three canned choices.
+  if (intent.restaurantId && intent.restaurantName && !intent.food) {
+    const found = await deps
+      .search(intent.restaurantName, {
+        restaurantId: intent.restaurantId,
+        restaurantName: intent.restaurantName,
+        limit: 300,
+      })
+      .catch(() => []);
+    const seen = new Set<string>();
+    const menu = found
+      .filter((item) => item.kind === 'restaurant' && !seen.has(item.id) && seen.add(item.id))
+      .sort((a, b) => (a.category ?? 'other').localeCompare(b.category ?? 'other') || a.name.localeCompare(b.name));
+    return { intent, question: null, exact: null, notFound: menu.length ? null : `We couldn’t load ${intent.restaurantName}’s menu right now.`, similar: [], showSimilar: false, blocked: [], menu };
+  }
 
   const early = nextQuestion(intent, ctx);
   if (early?.blocking) return { intent, question: early, exact: null, notFound: null, similar: [], showSimilar: false, blocked: [] };
@@ -117,7 +152,9 @@ export async function runCrave(input: CraveInput, deps: CraveDeps): Promise<Crav
     const results = await deps
       .search(q, { restaurantId: intent.restaurantId, restaurantName: intent.restaurantName, category: intent.category, limit: 20 })
       .catch(() => []);
-    let item = pickExact(intent, results);
+    const genericRuleRequest = !!rule && norm(intent.food).split(' ').length === 1;
+    let item = genericRuleRequest && r ? await deps.lookup(r.id, r.name, rule!.baseQuery).catch(() => null) : null;
+    if (!item) item = pickExact(intent, results);
     if (!item && r && rule) item = await deps.lookup(r.id, r.name, rule.baseQuery).catch(() => null);
     if (item) {
       const custom = await buildCustomizable(item, `${intent.raw} ${intent.food}`, deps.lookup);

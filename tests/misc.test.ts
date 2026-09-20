@@ -6,6 +6,10 @@ import { barcodeVariants, checkDigitValid, upcEtoA } from '../shared/barcode';
 import { labelScore } from '../shared/productScore';
 import { dailyBalance } from '../shared/balance';
 import { fieldLayout } from '../src/components/fieldLayout';
+import type { FoodItem } from '../shared/food';
+import { foodSearchScore } from '../shared/rank';
+import { HFF_RESTAURANTS, findHffRestaurant } from '../server/netlify/lib/providers/hffRestaurants';
+import { pickBestBarcodeHit } from '../server/netlify/lib/providers';
 
 describe('auth gate', () => {
   const h = { hydrated: true };
@@ -60,6 +64,49 @@ describe('barcodes', () => {
     expect(barcodeVariants('012345678905')).toEqual(['012345678905', '0012345678905', '00012345678905']);
     expect(barcodeVariants('0012345678905')).toContain('012345678905');
   });
+  it('chooses the most complete verified result when databases both find a barcode', () => {
+    const item = (id: string, complete: boolean): FoodItem => ({
+      id,
+      name: 'Test food',
+      kind: 'branded',
+      serving: { description: '1 serving', quantity: 1, unit: 'serving' },
+      nutrients: { calories: 100, protein: 2, carbs: 10, fat: 5, fiber: complete ? 3 : null, sugar: complete ? 2 : null, sodium: complete ? 100 : null },
+      source: { provider: id === 'usda' ? 'usda' : 'off', quality: 'verified_packaged' },
+    });
+    const best = pickBestBarcodeHit([
+      { hit: { item: item('off', false) }, order: 0 },
+      { hit: { item: item('usda', true) }, order: 1 },
+    ]);
+    expect(best?.item.id).toBe('usda');
+  });
+});
+
+describe('food search relevance', () => {
+  const result = (name: string, category: FoodItem['category']): Pick<FoodItem, 'name' | 'brand' | 'restaurant' | 'category'> => ({
+    name,
+    brand: 'Culver’s',
+    restaurant: 'culvers',
+    category,
+  });
+  it('ranks the requested food type above a result sharing only one ingredient word', () => {
+    expect(foodSearchScore('cheeseburger', result('ButterBurger Cheese Single', 'burger'))).toBeGreaterThan(
+      foodSearchScore('cheeseburger', result('Broccoli Cheese Soup', 'soup')),
+    );
+  });
+});
+
+describe('HealthyFastFood restaurant coverage', () => {
+  it('covers the complete 156-chain directory', () => expect(HFF_RESTAURANTS).toHaveLength(156));
+  it.each([
+    ['Whataburger double burger', 'whataburger'],
+    ['Cava chicken bowl', 'cava'],
+    ["Freddy's cheeseburger", 'freddys-frozen-custard-steakburgers'],
+    ['Costco pizza', 'costco'],
+    ['Olive Garden lasagna', 'olive-garden'],
+    ['CFA nuggets', 'chick-fil-a'],
+    ['DQ blizzard', 'dairy-queen'],
+    ['BK whopper', 'burger-king'],
+  ])('recognizes %s', (query, slug) => expect(findHffRestaurant(query)?.slug).toBe(slug));
 });
 
 describe('label score', () => {

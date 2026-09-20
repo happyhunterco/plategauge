@@ -7,11 +7,13 @@ import { OFF_UA, type BarcodeHit, type NutritionProvider, type ProviderSearch } 
  * Also supplies Nutri-Score, NOVA group and additives for the Label Score.
  * Product images are CC BY-SA; the app credits Open Food Facts when showing them.
  */
-type OffProduct = {
+export type OffProduct = {
   code?: string;
   product_name?: string;
   product_name_en?: string;
-  brands?: string;
+  // The product endpoint normally returns a comma-separated string, while
+  // search occasionally returns an array despite requesting the same field.
+  brands?: string | string[];
   serving_size?: string;
   serving_quantity?: number | string;
   nutriments?: Record<string, number | string>;
@@ -36,14 +38,16 @@ export function offToItem(p: OffProduct): FoodItem | null {
   if (!kcal) return null;
   const sodiumG = g('sodium');
   const grams = hasServing ? num(p.serving_quantity) : 100;
+  const brand = (Array.isArray(p.brands) ? p.brands[0] : typeof p.brands === 'string' ? p.brands.split(',')[0] : '')?.trim() || null;
+  const packagedServing = friendlyPackagedServing(name, p.serving_size);
   const item: FoodItem = {
     id: `off:${p.code}`,
     name,
-    brand: p.brands?.split(',')[0]?.trim() || null,
+    brand,
     kind: 'branded',
     serving:
-      hasServing && p.serving_size
-        ? { description: p.serving_size, quantity: 1, unit: 'serving', grams }
+      hasServing
+        ? { description: packagedServing, quantity: 1, unit: 'serving', grams }
         : { description: '100 g', quantity: 100, unit: 'g', grams: 100 },
     nutrients: nutrients(kcal, g('proteins'), g('carbohydrates'), g('fat'), {
       fiber: g('fiber'),
@@ -61,6 +65,19 @@ export function offToItem(p: OffProduct): FoodItem | null {
     },
   };
   return withRestaurant(item, false);
+}
+
+function friendlyPackagedServing(name: string, raw?: string): string {
+  const cleaned = raw?.replace(/\s*\([^)]*\b(?:g|gram|grams|ml)\b[^)]*\)\s*/gi, ' ').trim();
+  if (cleaned && !/^\d+(?:\.\d+)?\s*(?:g|gram|grams|ml)$/i.test(cleaned)) return cleaned;
+  const value = name.toLowerCase();
+  if (/\b(protein|granola|energy|snack|candy) bar\b|\bbar\b/.test(value)) return '1 bar';
+  if (/\bshake\b/.test(value)) return '1 shake';
+  if (/\byogurt\b/.test(value)) return '1 container';
+  if (/\bcookie\b/.test(value)) return '1 cookie';
+  if (/\bbottle\b/.test(value)) return '1 bottle';
+  if (/\bcan\b/.test(value)) return '1 can';
+  return '1 serving';
 }
 
 export function offSignals(p: OffProduct) {

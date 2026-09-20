@@ -39,6 +39,44 @@ describe('Scenario A: exact food fits', () => {
     expect(r.showSimilar).toBe(false);
     for (const s of r.similar) expect(s.item.name).not.toMatch(/yogurt|quesadilla/i);
   });
+  it('never mistakes a shared ingredient word for the requested food', async () => {
+    const burger = DEV_FOODS.find((f) => f.name === 'ButterBurger Cheese Single')!;
+    const soup = {
+      ...DEV_FOODS.find((f) => f.name === 'Zuppa Toscana')!,
+      id: 'test:broccoli-cheese-soup',
+      name: 'Broccoli Cheese Soup',
+      restaurant: 'culvers',
+      brand: 'Culver’s',
+      category: 'soup' as const,
+    };
+    const mixed: CraveDeps = {
+      search: async () => [soup, burger],
+      lookup: async () => null,
+    };
+    const r = await runCrave({ text: 'Culver’s cheeseburger', left: roomy, prefs }, mixed);
+    expect(r.exact?.item.name).toBe('ButterBurger Cheese Single');
+  });
+});
+
+describe('restaurant menu browsing', () => {
+  it('returns the actual menu instead of three canned choices', async () => {
+    const r = await runCrave({ text: 'Culver’s', left: roomy, prefs }, deps);
+    expect(r.question).toBeNull();
+    expect(r.menu?.length).toBeGreaterThan(3);
+    expect(r.menu?.every((item) => item.restaurant === 'culvers')).toBe(true);
+  });
+
+  it('supports a restaurant found by the complete server directory', async () => {
+    const item = { ...DEV_FOODS[0], id: 'hff:whataburger:test', brand: 'Whataburger', restaurant: 'whataburger' };
+    const dynamic: CraveDeps = {
+      search: async (_q, options) => (options?.restaurantId === 'whataburger' ? [item] : []),
+      lookup: async () => null,
+      restaurant: () => ({ id: 'whataburger', name: 'Whataburger', alias: 'whataburger' }),
+    };
+    const r = await runCrave({ text: 'Whataburger', left: roomy, prefs }, dynamic);
+    expect(r.intent.restaurantName).toBe('Whataburger');
+    expect(r.menu?.[0]?.restaurant).toBe('whataburger');
+  });
 });
 
 describe('Scenario B: exact food does not fit', () => {

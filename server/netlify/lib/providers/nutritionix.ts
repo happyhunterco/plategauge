@@ -44,7 +44,7 @@ function nixToItem(x: NixItem): FoodItem | null {
     brand: x.brand_name ?? null,
     kind: restaurant ? 'restaurant' : 'branded',
     serving: {
-      description: `${qty} ${unit}${x.serving_weight_grams ? ` (${Math.round(x.serving_weight_grams)} g)` : ''}`,
+      description: `${qty} ${unit}`,
       quantity: qty,
       unit,
       grams: x.serving_weight_grams ?? null,
