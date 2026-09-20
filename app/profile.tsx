@@ -53,10 +53,14 @@ export default function Profile() {
   if (!p || !s.goals) return null;
 
   const pickAvatar = async () => {
-    const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!perm.granted) {
-      Alert.alert('Photos access needed', 'Allow photo access to set a profile picture.');
-      return;
+    // On web, skip the permission check — browsers handle file picker access natively.
+    // On native, request permission first.
+    if (Platform.OS !== 'web') {
+      const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!perm.granted) {
+        Alert.alert('Photos access needed', 'Allow photo access to set a profile picture.');
+        return;
+      }
     }
     const res = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], allowsEditing: true, aspect: [1, 1], quality: 0.7 });
     if (!res.canceled && res.assets[0]) save('avatar', res.assets[0].uri);

@@ -50,7 +50,12 @@ export default function Scan() {
 
   useEffect(() => {
     aiAvailable().then((a) => setAiReady(!!a));
-  }, []);
+    // Auto-request camera permission on first visit so the user isn't
+    // asked to tap "Allow" every single time they open the scanner.
+    if (perm && !perm.granted && perm.canAskAgain) {
+      requestPerm();
+    }
+  }, []);  // eslint-disable-line react-hooks/exhaustive-deps
 
   // If nothing scans after a while, suggest light or typing the number.
   useEffect(() => {
