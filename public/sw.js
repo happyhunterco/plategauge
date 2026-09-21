@@ -1,6 +1,6 @@
 // Minimal service worker: makes the web app installable and keeps the app shell
 // available offline. API calls (/api/*) are never cached.
-const CACHE = 'plategauge-shell-v1';
+const CACHE = 'plategauge-shell-v2';
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.add('/')).then(() => self.skipWaiting()));

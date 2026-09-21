@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { hff } from '../server/netlify/lib/providers/hff';
 import { off, offToItem } from '../server/netlify/lib/providers/off';
-import { searchFoods } from '../server/netlify/lib/providers';
+import { dedupe, searchFoods } from '../server/netlify/lib/providers';
 import { fdcToItem } from '../server/netlify/lib/providers/usda';
 import type { FoodItem } from '../shared/food';
 
@@ -101,6 +101,41 @@ describe('Open Food Facts provider', () => {
     expect(item?.serving.description).toBe('1 bar');
     expect(item?.serving.grams).toBe(60);
   });
+
+  it('converts per-100-g values to one package serving when the label has a serving weight', () => {
+    const item = offToItem({
+      code: '457',
+      product_name: 'Salty Peanut Protein Bar',
+      brands: 'Barebells',
+      serving_size: '55 g',
+      serving_quantity: 55,
+      nutriments: { 'energy-kcal_100g': 369, proteins_100g: 36.4, carbohydrates_100g: 32.7, fat_100g: 14.9 },
+    });
+    expect(item?.serving.description).toBe('1 bar');
+    expect(item?.nutrients.calories).toBe(203);
+    expect(item?.nutrients.protein).toBe(20);
+  });
+
+  it('collapses duplicate regional product records but keeps other brands and flavors', () => {
+    const make = (id: string, name: string, brand: string): FoodItem => ({
+      id,
+      name,
+      brand,
+      kind: 'branded',
+      serving: { description: '1 bar', quantity: 1, unit: 'serving', grams: 55 },
+      nutrients: { calories: 200, protein: 20, carbs: 18, fat: 8 },
+      source: { provider: 'off', quality: 'verified_packaged' },
+    });
+    const result = dedupe([
+      make('1', 'Salty Peanut Protein Bar', 'Barebells'),
+      make('2', 'Protein Bar Salty Peanut', 'Barebell'),
+      make('3', 'White Salty Peanut Protein Bar', 'Barebells'),
+      make('4', 'Salty Peanut Protein Bar', "Nick's"),
+    ]);
+    expect(result).toHaveLength(3);
+    expect(result.map((item) => item.name)).toContain('White Salty Peanut Protein Bar');
+    expect(result.map((item) => item.brand)).toContain("Nick's");
+  });
 });
 
 describe('USDA provider', () => {
@@ -120,6 +155,20 @@ describe('USDA provider', () => {
     });
     expect(item?.serving.description).toBe('1 bar');
     expect(item?.serving.grams).toBe(60);
+  });
+
+  it('uses a whole-food serving for a generic apple instead of 100 grams', () => {
+    const item = fdcToItem({
+      fdcId: 2,
+      description: 'APPLES, RAW, WITH SKIN',
+      dataType: 'Foundation',
+      foodNutrients: [
+        { nutrientId: 1008, value: 52 },
+        { nutrientId: 1005, value: 13.8 },
+      ],
+    });
+    expect(item?.serving.description).toBe('1 medium apple');
+    expect(item?.nutrients.calories).toBe(95);
   });
 });
 

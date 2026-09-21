@@ -16,22 +16,9 @@
     <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
     <title>Vahla</title>
     <style>
-      html, body, #root { height: 100%; margin: 0; background: #fff; }
+      html, body, #root { height: 100%; margin: 0; background: #fff; color-scheme: light; }
       body { overflow: hidden; overscroll-behavior: none; }
-      #root { display: flex; flex: 1; position: relative; z-index: 1; isolation: isolate; }
-      /* Keep the iOS standalone status area opaque instead of showing Safari's glass blur. */
-      body::before {
-        content: '';
-        position: fixed;
-        z-index: 2147483647;
-        pointer-events: none;
-        top: 0;
-        right: 0;
-        left: 0;
-        height: env(safe-area-inset-top, 0px);
-        background: #fff;
-        transform: translateZ(0);
-      }
+      #root { display: flex; flex: 1; position: relative; }
     </style>
   </head>
   <body>

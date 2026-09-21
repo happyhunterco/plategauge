@@ -2,7 +2,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { SourceLine, showUndo } from '../src/components/Kit';
-import { Button, Empty, Field, Screen, Segmented, Stepper, macroLine } from '../src/components/UI';
+import { AmountStepper, Button, Empty, Field, Screen, Segmented, macroLine } from '../src/components/UI';
 import { timeOf } from '../src/dates';
 import { fmt } from '../src/hooks';
 import { pushEntry, removeEntryRemote } from '../src/services/sync';
@@ -47,8 +47,7 @@ export default function EntryScreen() {
         />
         <View style={styles.row}>
           <View>
-            <Text style={styles.label}>Servings</Text>
-            <Stepper value={qty} onChange={setQty} step={qty < 2 ? 0.25 : 0.5} />
+            <AmountStepper value={qty} onChange={setQty} serving={entry.serving} gramsPerServing={null} />
           </View>
           <View style={{ alignItems: 'flex-end' }}>
             <Text style={styles.cal}>{fmt(entry.nutrients.calories * qty)}</Text>

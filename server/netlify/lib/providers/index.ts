@@ -18,18 +18,53 @@ export const configuredProviders = () => PROVIDERS.filter((p) => p.configured())
 const searchCache = new TTLCache<SearchPage>(10 * 60_000);
 const barcodeCache = new TTLCache<BarcodeResult>(60 * 60_000);
 
-const dedupeKey = (f: FoodItem) => `${norm(f.brand ?? '')}|${norm(f.name)}|${Math.round(f.nutrients.calories / 10)}`;
 const restaurantSourceRank = (f: FoodItem) => (f.source.provider === 'hff' ? 2 : f.kind === 'restaurant' ? 1 : 0);
+
+const productNameKey = (value: string) => [...new Set(norm(value).split(' ').filter(Boolean))].sort().join(' ');
+const companyKey = (value: string) => norm(value).replace(/\b(inc|llc|ltd|company|co)\b/g, '').replace(/\s+/g, ' ').trim().replace(/s$/, '');
+const editDistance = (a: string, b: string) => {
+  const row = Array.from({ length: b.length + 1 }, (_, i) => i);
+  for (let i = 1; i <= a.length; i++) {
+    let prev = row[0]!;
+    row[0] = i;
+    for (let j = 1; j <= b.length; j++) {
+      const old = row[j]!;
+      row[j] = Math.min(row[j]! + 1, row[j - 1]! + 1, prev + (a[i - 1] === b[j - 1] ? 0 : 1));
+      prev = old;
+    }
+  }
+  return row[b.length]!;
+};
+const sameCompany = (a?: string | null, b?: string | null) => {
+  const x = companyKey(a ?? '');
+  const y = companyKey(b ?? '');
+  if (!x || !y) return !x && !y;
+  return x === y || (x.length >= 5 && y.length >= 5 && editDistance(x, y) <= 1);
+};
+const nutritionCompleteness = (item: FoodItem) =>
+  [item.nutrients.calories, item.nutrients.protein, item.nutrients.carbs, item.nutrients.fat, item.nutrients.fiber, item.nutrients.sugar, item.nutrients.sodium].filter(
+    (value) => value != null,
+  ).length;
+const copyScore = (item: FoodItem) =>
+  qualityRank(item.source.quality) * 100 +
+  (item.brand ? 20 : 0) +
+  (item.serving.unit !== 'g' && item.serving.description !== '100 g' ? 40 : 0) +
+  (item.serving.grams ? 10 : 0) +
+  nutritionCompleteness(item);
 
 /** Keep the best-quality copy of duplicates across providers. */
 export function dedupe(items: FoodItem[]): FoodItem[] {
-  const map = new Map<string, FoodItem>();
+  const kept: FoodItem[] = [];
   for (const it of items) {
-    const k = dedupeKey(it);
-    const cur = map.get(k);
-    if (!cur || qualityRank(it.source.quality) > qualityRank(cur.source.quality)) map.set(k, it);
+    const name = productNameKey(it.name);
+    const index = kept.findIndex((cur) => {
+      if (cur.kind === 'branded' && it.kind === 'branded') return productNameKey(cur.name) === name && sameCompany(cur.brand, it.brand);
+      return norm(cur.brand ?? cur.restaurant ?? '') === norm(it.brand ?? it.restaurant ?? '') && norm(cur.name) === norm(it.name);
+    });
+    if (index < 0) kept.push(it);
+    else if (copyScore(it) > copyScore(kept[index]!)) kept[index] = it;
   }
-  return [...map.values()];
+  return kept;
 }
 
 export type SearchParams = { q: string; page: number; pageSize: number; kind?: string; brand?: string; restaurantId?: string | null };
@@ -124,17 +159,6 @@ export type BarcodeResult = {
   score: LabelScore | null;
   tried: { id: ProviderId; ok: boolean; error?: string }[];
 };
-
-const nutritionCompleteness = (item: FoodItem) =>
-  [
-    item.nutrients.calories,
-    item.nutrients.protein,
-    item.nutrients.carbs,
-    item.nutrients.fat,
-    item.nutrients.fiber,
-    item.nutrients.sugar,
-    item.nutrients.sodium,
-  ].filter((value) => value != null).length;
 
 export function pickBestBarcodeHit(hits: { hit: { item: FoodItem; signals?: ProductSignals }; order: number }[]) {
   return (

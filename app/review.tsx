@@ -6,7 +6,7 @@ import { categoryOf } from '../shared/tags';
 import { useHandoff } from '../src/building';
 import { SourceLine } from '../src/components/Kit';
 import { Totals } from '../src/components/Totals';
-import { Button, Empty, Screen, Section, Segmented, Stepper, macroLine, success } from '../src/components/UI';
+import { AmountStepper, Button, Empty, Screen, Section, Segmented, macroLine, success } from '../src/components/UI';
 import { mealForNow, prettyDay } from '../src/dates';
 import { fmt, useLeftToday } from '../src/hooks';
 import { customize } from '../src/services/foods';
@@ -92,12 +92,16 @@ export default function Review() {
                   accessibilityLabel="Food name"
                 />
                 {d.item.brand ? <Text style={styles.meta}>{d.item.brand}</Text> : null}
-                <SourceLine source={d.item.source} serving={`${d.item.serving.description} per serving`} />
+                <SourceLine source={d.item.source} showProvider={false} />
                 {d.changes?.length ? <Text style={styles.changes}>{d.changes.join(', ')}</Text> : null}
                 <View style={styles.bottomRow}>
                   <View>
-                    <Text style={styles.small}>Servings</Text>
-                    <Stepper value={d.qty} onChange={(qty) => updateDraft(d.key, { qty })} step={d.qty < 2 ? 0.25 : 0.5} />
+                    <AmountStepper
+                      value={d.qty}
+                      onChange={(qty) => updateDraft(d.key, { qty })}
+                      serving={d.item.serving.description}
+                      gramsPerServing={d.item.serving.grams}
+                    />
                   </View>
                   <View style={{ alignItems: 'flex-end' }}>
                     <Text style={styles.cal}>{fmt(d.item.nutrients.calories * d.qty)}</Text>

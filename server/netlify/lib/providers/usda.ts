@@ -36,7 +36,7 @@ export function fdcToItem(f: FdcFood): FoodItem | null {
   if (kcal100 == null) return null;
   const branded = f.dataType === 'Branded';
   // Search results report per 100 g/ml. Branded foods also give a serving size to convert to.
-  const grams = branded && f.servingSize && /^(g|ml|grm|mlt)$/i.test(f.servingSizeUnit ?? '') ? f.servingSize : null;
+  const grams = f.servingSize && /^(g|ml|grm|mlt)$/i.test(f.servingSizeUnit ?? '') ? f.servingSize : commonWholeFoodServing(f.description)?.grams ?? null;
   const k = grams ? grams / 100 : 1;
   const v = (ids: number[]) => {
     const x = pick(list, ids);
@@ -56,7 +56,7 @@ export function fdcToItem(f: FdcFood): FoodItem | null {
       ? {
           // Keep the weight for calculations, but show the package's natural
           // household unit. A raw gram weight is not useful as a serving label.
-          description: f.householdServingFullText?.trim() || friendlyPackagedServing(name),
+          description: cleanHouseholdServing(f.householdServingFullText) || commonWholeFoodServing(f.description)?.description || friendlyPackagedServing(name),
           quantity: 1,
           unit: 'serving',
           grams,
@@ -73,6 +73,26 @@ export function fdcToItem(f: FdcFood): FoodItem | null {
     },
   };
   return withRestaurant(item, !!chain);
+}
+
+function cleanHouseholdServing(raw?: string): string {
+  return raw?.replace(/\s*\([^)]*\b(?:g|gram|grams|ml)\b[^)]*\)\s*/gi, ' ').replace(/\s+/g, ' ').trim() ?? '';
+}
+
+function commonWholeFoodServing(name: string): { description: string; grams: number } | null {
+  const value = name.toLowerCase();
+  if (/\b(juice|sauce|pie|dried|canned|baby food|salad|noodle|substitute|powder)\b/.test(value)) return null;
+  const whole: [RegExp, string, number][] = [
+    [/\bapples?\b/, '1 medium apple', 182],
+    [/\bbananas?\b/, '1 medium banana', 118],
+    [/\boranges?\b/, '1 medium orange', 131],
+    [/\bpears?\b/, '1 medium pear', 178],
+    [/\bpeaches?\b/, '1 medium peach', 150],
+    [/\bavocados?\b/, '1 avocado', 201],
+    [/\beggs?\b/, '1 large egg', 50],
+  ];
+  const match = whole.find(([pattern]) => pattern.test(value));
+  return match ? { description: match[1], grams: match[2] } : null;
 }
 
 function friendlyPackagedServing(name: string): string {

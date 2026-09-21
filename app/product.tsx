@@ -6,7 +6,7 @@ import { scoreWord } from '../shared/productScore';
 import { useHandoff } from '../src/building';
 import { Card, SourceLine } from '../src/components/Kit';
 import { Totals } from '../src/components/Totals';
-import { Button, Empty, Screen, Section, Stepper } from '../src/components/UI';
+import { AmountStepper, Button, Empty, Screen, Section } from '../src/components/UI';
 import { fmt, useLeftToday } from '../src/hooks';
 import { useStore } from '../src/store';
 import { color, font, space } from '../src/theme';
@@ -129,8 +129,7 @@ export default function Product() {
 
         <Section title="How much?">
           <View style={styles.qtyRow}>
-            <Text style={styles.brand}>{it.serving.description} per serving</Text>
-            <Stepper value={qty} onChange={setQty} step={qty < 2 ? 0.25 : 0.5} />
+            <AmountStepper value={qty} onChange={setQty} serving={it.serving.description} gramsPerServing={it.serving.grams} />
           </View>
           <View style={{ marginTop: space.m }}>
             <Totals n={scaled} left={left} />

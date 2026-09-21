@@ -32,12 +32,19 @@ export function offToItem(p: OffProduct): FoodItem | null {
   const n = p.nutriments ?? {};
   const name = (p.product_name_en || p.product_name || '').trim();
   if (!name) return null;
-  const hasServing = num(n['energy-kcal_serving']) != null;
-  const g = (k: string) => num(hasServing ? n[`${k}_serving`] : n[`${k}_100g`]);
-  const kcal = g('energy-kcal') ?? (num(hasServing ? n['energy_serving'] : n['energy_100g']) ?? 0) / 4.184;
+  const rawServingGrams = num(p.serving_quantity) ?? num(p.serving_size?.match(/[\d.]+/)?.[0]);
+  const servingGrams = rawServingGrams && rawServingGrams > 0 && rawServingGrams <= 2_000 ? rawServingGrams : null;
+  const hasServingNutrients = num(n['energy-kcal_serving']) != null || num(n['energy_serving']) != null;
+  const perServing = (k: string) => {
+    const direct = num(n[`${k}_serving`]);
+    if (direct != null) return direct;
+    const per100 = num(n[`${k}_100g`]);
+    return per100 != null && servingGrams ? (per100 * servingGrams) / 100 : per100;
+  };
+  const g = (k: string) => (servingGrams || hasServingNutrients ? perServing(k) : num(n[`${k}_100g`]));
+  const kcal = g('energy-kcal') ?? (g('energy') ?? 0) / 4.184;
   if (!kcal) return null;
   const sodiumG = g('sodium');
-  const grams = hasServing ? num(p.serving_quantity) : 100;
   const brand = (Array.isArray(p.brands) ? p.brands[0] : typeof p.brands === 'string' ? p.brands.split(',')[0] : '')?.trim() || null;
   const packagedServing = friendlyPackagedServing(name, p.serving_size);
   const item: FoodItem = {
@@ -45,8 +52,8 @@ export function offToItem(p: OffProduct): FoodItem | null {
     name,
     brand,
     kind: 'branded',
-    serving: hasServing
-      ? { description: packagedServing, quantity: 1, unit: 'serving', grams }
+    serving: servingGrams || hasServingNutrients
+      ? { description: packagedServing, quantity: 1, unit: 'serving', grams: servingGrams }
       : { description: '100 g', quantity: 100, unit: 'g', grams: 100 },
     nutrients: nutrients(kcal, g('proteins'), g('carbohydrates'), g('fat'), {
       fiber: g('fiber'),
@@ -113,11 +120,15 @@ export const off: NutritionProvider = {
   covers: ['branded'],
   configured: () => true, // public API, no key
   async search(s: ProviderSearch) {
-    const url = `https://search.openfoodfacts.org/search?q=${encodeURIComponent(s.query)}&page=${s.page}&page_size=${s.pageSize}&fields=${FIELDS}`;
+    // The indexed search endpoint omits serving fields for many products. The
+    // classic JSON search includes the label serving, so results can default to
+    // one bar/container/item instead of misleading per-100-g nutrition.
+    const size = Math.min(Math.max(s.pageSize * 3, 30), 60);
+    const url = `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(s.query)}&search_simple=1&action=process&json=1&page=${s.page}&page_size=${size}&fields=${FIELDS}`;
     const res = await fetch(url, { headers: { 'User-Agent': OFF_UA } });
     if (!res.ok) throw new Error(`Open Food Facts search ${res.status}`);
-    const data = (await res.json()) as { hits?: OffProduct[] };
-    return (data.hits ?? []).map(offToItem).filter((x): x is FoodItem => !!x);
+    const data = (await res.json()) as { products?: OffProduct[] };
+    return (data.products ?? []).map(offToItem).filter((x): x is FoodItem => !!x);
   },
   async barcode(code: string): Promise<BarcodeHit | null> {
     const p = await offProduct(code);

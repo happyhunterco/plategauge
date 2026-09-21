@@ -4,7 +4,6 @@ import type { FoodItem } from '../../shared/food';
 import { fmt } from '../hooks';
 import { useStore } from '../store';
 import { color, font, space } from '../theme';
-import { SourceLine } from './Kit';
 import { macroLine, tap } from './UI';
 
 export function FoodRow({ item, onPress, last, right }: { item: FoodItem; onPress: () => void; last?: boolean; right?: React.ReactNode }) {
@@ -27,7 +26,7 @@ export function FoodRow({ item, onPress, last, right }: { item: FoodItem; onPres
         <Text style={styles.detail} numberOfLines={1}>
           {[item.brand, macroLine(item.nutrients)].filter(Boolean).join('   ')}
         </Text>
-        <SourceLine source={item.source} serving={item.serving.description} />
+        <Text style={styles.serving} numberOfLines={1}>{item.serving.description}</Text>
       </View>
       <View style={styles.right}>
         <Text style={styles.cal}>{fmt(item.nutrients.calories)}</Text>
@@ -55,6 +54,7 @@ const styles = StyleSheet.create({
   line: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: color.line },
   name: { fontSize: 16, color: color.ink, fontWeight: '500' },
   detail: { fontSize: 13, color: color.sub, marginTop: 2 },
+  serving: { fontSize: 12, color: color.faint, marginTop: 5 },
   right: { alignItems: 'flex-end', gap: 4 },
   cal: { fontFamily: font.displayMed, fontSize: 16, color: color.ink },
   star: { width: 44, height: 32, alignItems: 'flex-end', justifyContent: 'center' },

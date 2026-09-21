@@ -292,7 +292,17 @@ export function MacroBars({ eaten, goals }: { eaten: Macros; goals: Macros }) {
   );
 }
 
-export function Stepper({ value, onChange, step = 0.5 }: { value: number; onChange: (v: number) => void; step?: number }) {
+export function Stepper({
+  value,
+  onChange,
+  step = 0.5,
+  formatValue = (v) => `${v}×`,
+}: {
+  value: number;
+  onChange: (v: number) => void;
+  step?: number;
+  formatValue?: (v: number) => string;
+}) {
   const b = (d: number, icon: IconName, label: string) => (
     <Pressable
       accessibilityRole="button"
@@ -310,8 +320,41 @@ export function Stepper({ value, onChange, step = 0.5 }: { value: number; onChan
   return (
     <View style={styles.stepper}>
       {b(-step, 'remove', 'Less')}
-      <Text style={styles.stepVal}>{value}×</Text>
+      <Text style={styles.stepVal}>{formatValue(value)}</Text>
       {b(step, 'add', 'More')}
+    </View>
+  );
+}
+
+export function AmountStepper({
+  value,
+  onChange,
+  serving,
+  gramsPerServing,
+}: {
+  value: number;
+  onChange: (v: number) => void;
+  serving: string;
+  gramsPerServing?: number | null;
+}) {
+  const [mode, setMode] = useState<'serving' | 'grams'>('serving');
+  const grams = gramsPerServing && gramsPerServing > 0 ? gramsPerServing : null;
+  const gramValue = grams ? Math.round(value * grams) : 0;
+  return (
+    <View>
+      <View style={styles.amountHead}>
+        <Text style={styles.amountLabel}>{mode === 'grams' ? 'Grams' : serving}</Text>
+        {grams ? (
+          <Pressable onPress={() => setMode(mode === 'grams' ? 'serving' : 'grams')} hitSlop={8} accessibilityRole="button">
+            <Text style={styles.amountToggle}>{mode === 'grams' ? `Use ${serving}` : 'Use grams'}</Text>
+          </Pressable>
+        ) : null}
+      </View>
+      {mode === 'grams' && grams ? (
+        <Stepper value={gramValue} onChange={(next) => onChange(next / grams)} step={5} formatValue={(v) => `${v} g`} />
+      ) : (
+        <Stepper value={value} onChange={onChange} step={value < 2 ? 0.25 : 0.5} />
+      )}
     </View>
   );
 }
@@ -414,6 +457,9 @@ const styles = StyleSheet.create({
   stepper: { flexDirection: 'row', alignItems: 'center', backgroundColor: color.wash, borderRadius: radius.pill, padding: 3 },
   stepBtn: { width: 30, height: 30, borderRadius: 15, alignItems: 'center', justifyContent: 'center', backgroundColor: '#fff' },
   stepVal: { minWidth: 44, textAlign: 'center', fontFamily: font.displayMed, fontSize: 15, color: color.ink },
+  amountHead: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 5 },
+  amountLabel: { fontSize: 12, color: color.sub, flexShrink: 1 },
+  amountToggle: { fontSize: 12, color: color.ink, fontWeight: '700' },
   empty: { alignItems: 'center', paddingVertical: space.xxl, paddingHorizontal: space.xl },
   error: {
     flexDirection: 'row',
