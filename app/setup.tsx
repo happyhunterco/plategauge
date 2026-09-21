@@ -5,7 +5,7 @@ import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { RESTAURANTS } from '../shared/restaurants';
 import { computeTargets, type Goal, type Sex } from '../shared/targets';
-import { LogoMark } from '../src/components/Logo';
+import { LogoMark, LogoWordmark } from '../src/components/Logo';
 import { Button, Chip, Field, Segmented, tap } from '../src/components/UI';
 import { fmt } from '../src/hooks';
 import { useStore } from '../src/store';
@@ -135,8 +135,10 @@ export default function Setup() {
       <ScrollView contentContainerStyle={styles.body} keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive">
         {step === 0 ? (
           <View style={styles.welcome}>
-            <LogoMark size={120} />
-            <Text style={styles.brand}>vahla</Text>
+            <View style={styles.welcomeLogo}>
+              <LogoMark size={120} />
+              <LogoWordmark width={126} />
+            </View>
             <Text style={styles.tagline}>What’re ya hungry for?</Text>
             <Text style={styles.pitch}>Track calories, and when a craving hits, see exactly how to make it fit.</Text>
             <View style={styles.welcomeActions}>
@@ -390,8 +392,8 @@ const styles = StyleSheet.create({
   dot: { width: 28, height: 4, borderRadius: 2, backgroundColor: color.line },
   body: { paddingHorizontal: space.l, paddingBottom: space.xl, maxWidth: 560, width: '100%', alignSelf: 'center' },
   welcome: { alignItems: 'center', paddingTop: space.xxl },
+  welcomeLogo: { alignItems: 'center', gap: space.l },
   welcomeActions: { width: '100%', marginTop: space.xl, gap: space.xs },
-  brand: { fontFamily: font.displayBold, fontSize: 34, color: color.ink, marginTop: space.l, letterSpacing: -1 },
   tagline: { fontFamily: font.displayMed, fontSize: 18, color: color.gauge, marginTop: 4 },
   pitch: { fontSize: 16, color: color.sub, textAlign: 'center', marginTop: space.l, lineHeight: 23, maxWidth: 320 },
   h1: { fontFamily: font.displayBold, fontSize: 28, color: color.ink, letterSpacing: -0.6, marginTop: space.m, marginBottom: space.l },

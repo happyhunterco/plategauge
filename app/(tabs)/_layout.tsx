@@ -5,7 +5,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { tap, type IconName } from '../../src/components/UI';
 import { Avatar, StreakChip } from '../../src/components/Kit';
-import { LogoMark } from '../../src/components/Logo';
+import { LogoMark, LogoWordmark } from '../../src/components/Logo';
 import { SIDEBAR, useWide } from '../../src/layout';
 import { color, font } from '../../src/theme';
 
@@ -71,7 +71,7 @@ function SideBar({ state, navigation }: BottomTabBarProps) {
     <View style={side.bar} accessibilityRole="tablist">
       <View style={side.brand}>
         <LogoMark size={34} />
-        <Text style={side.brandText}>vahla</Text>
+        <LogoWordmark width={76} />
       </View>
       <Pressable
         onPress={() => router.push('/add')}
@@ -174,7 +174,6 @@ const side = StyleSheet.create({
     paddingBottom: 20,
   },
   brand: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 8, marginBottom: 24 },
-  brandText: { fontFamily: font.displayBold, fontSize: 21, color: color.ink, letterSpacing: -0.4 },
   add: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, height: 46, borderRadius: 14, backgroundColor: color.ink },
   addText: { color: '#fff', fontFamily: font.display, fontSize: 15 },
   item: { flexDirection: 'row', alignItems: 'center', gap: 12, height: 44, borderRadius: 12, paddingHorizontal: 12 },
