@@ -1,6 +1,7 @@
 import type { Handler } from '@netlify/functions';
 import Stripe from 'stripe';
 import { createClient } from '@supabase/supabase-js';
+import { authenticatedUser } from '../lib/auth';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', { apiVersion: '2024-12-18.acacia' as any });
 const supabase = createClient(process.env.SUPABASE_URL || '', process.env.SUPABASE_SERVICE_ROLE_KEY || '');
@@ -16,8 +17,9 @@ export const handler: Handler = async (event) => {
   if (event.httpMethod !== 'POST') return { statusCode: 405, headers: CORS, body: JSON.stringify({ error: 'POST only' }) };
 
   try {
-    const { userId } = JSON.parse(event.body || '{}');
-    if (!userId) return { statusCode: 400, headers: CORS, body: JSON.stringify({ error: 'missing_user' }) };
+    const user = await authenticatedUser(event.headers.authorization);
+    if (!user) return { statusCode: 401, headers: CORS, body: JSON.stringify({ error: 'unauthorized' }) };
+    const userId = user.id;
 
     // Check Supabase profile for stored subscription
     const { data: profile } = await supabase.from('profiles').select('subscription').eq('id', userId).single();

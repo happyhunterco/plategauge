@@ -9,6 +9,7 @@ export default async () =>
     ai: aiConfigured(),
     providers: PROVIDERS.map((p) => ({ id: p.id, configured: p.configured() })),
     accountDeletion: !!(env('SUPABASE_URL') && env('SUPABASE_SERVICE_ROLE_KEY')),
+    webBilling: !!(env('STRIPE_SECRET_KEY') && env('STRIPE_PRICE_MONTHLY') && env('STRIPE_PRICE_ANNUAL') && env('STRIPE_WEBHOOK_SECRET')),
   });
 
 export const config: Config = { path: '/api/status' };

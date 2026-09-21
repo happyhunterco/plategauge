@@ -1,5 +1,6 @@
 import type { Handler } from '@netlify/functions';
 import Stripe from 'stripe';
+import { authenticatedUser } from '../lib/auth';
 
 const headers = {
   'Content-Type': 'application/json',
@@ -17,13 +18,15 @@ export const handler: Handler = async (event) => {
   const secret = process.env.STRIPE_SECRET_KEY;
   if (!secret) return reply(503, { error: 'Payments are not configured yet.' });
 
-  let input: { plan?: string; userId?: string; email?: string };
+  const user = await authenticatedUser(event.headers.authorization);
+  if (!user) return reply(401, { error: 'Sign in again before upgrading.' });
+
+  let input: { plan?: string };
   try {
     input = JSON.parse(event.body || '{}');
   } catch {
     return reply(400, { error: 'Invalid request.' });
   }
-  if (!input.userId) return reply(401, { error: 'Sign in before upgrading.' });
   if (input.plan !== 'monthly' && input.plan !== 'annual') return reply(400, { error: 'Choose a monthly or annual plan.' });
 
   const price = input.plan === 'annual' ? process.env.STRIPE_PRICE_ANNUAL : process.env.STRIPE_PRICE_MONTHLY;
@@ -36,10 +39,10 @@ export const handler: Handler = async (event) => {
     const session = await stripe.checkout.sessions.create({
       mode: 'subscription',
       line_items: [{ price, quantity: 1 }],
-      client_reference_id: input.userId,
-      customer_email: input.email || undefined,
-      metadata: { supabase_user_id: input.userId, plan: input.plan },
-      subscription_data: { metadata: { supabase_user_id: input.userId, plan: input.plan } },
+      client_reference_id: user.id,
+      customer_email: user.email || undefined,
+      metadata: { supabase_user_id: user.id, plan: input.plan },
+      subscription_data: { metadata: { supabase_user_id: user.id, plan: input.plan } },
       allow_promotion_codes: true,
       success_url: `${baseUrl}/account?checkout=success`,
       cancel_url: `${baseUrl}/upgrade?checkout=cancel`,

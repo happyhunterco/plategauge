@@ -1,5 +1,5 @@
 /**
- * PlateGauge Label Score (0–10) for packaged foods.
+ * Vahla Label Score (0–10) for packaged foods.
  * Built only from open data (Open Food Facts): Nutri-Score, NOVA processing group, additives.
  *   Nutrition  up to 6  (Nutri-Score A=6 … E=1)
  *   Processing up to 2  (NOVA 1=2 … 4=0.5)

@@ -12,6 +12,28 @@
 [functions]
   node_bundler = "esbuild"
 
+# Classic Netlify handlers do not declare v2 route configs, so keep their public
+# URLs explicit and stable for the app and Stripe webhook configuration.
+[[redirects]]
+  from = "/api/checkout"
+  to = "/.netlify/functions/checkout"
+  status = 200
+
+[[redirects]]
+  from = "/api/subscription-status"
+  to = "/.netlify/functions/subscription-status"
+  status = 200
+
+[[redirects]]
+  from = "/api/billing-portal"
+  to = "/.netlify/functions/billing-portal"
+  status = 200
+
+[[redirects]]
+  from = "/api/stripe/webhook"
+  to = "/.netlify/functions/stripe-webhook"
+  status = 200
+
 # Single-page app: every non-API route serves the app.
 [[redirects]]
   from = "/*"

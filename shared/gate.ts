@@ -1,6 +1,6 @@
 export type GateState = { hydrated: boolean; onboarded: boolean; signedIn: boolean };
 
-const AUTH_SCREENS = ['account', 'reset-password', 'legal'];
+const AUTH_SCREENS = ['account', 'reset-password', 'privacy', 'terms'];
 
 /**
  * Where a user is allowed to be. Returns a path to redirect to, or null to stay.

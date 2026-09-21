@@ -24,6 +24,12 @@ describe('auth gate', () => {
     expect(gateRedirect({ ...h, onboarded: true, signedIn: true }, ['account'])).toBe('/');
   });
   it('waits for storage before deciding', () => expect(gateRedirect({ hydrated: false, onboarded: false, signedIn: false }, [])).toBeNull());
+  it('keeps legal and recovery pages public', () => {
+    const signedOut = { hydrated: true, onboarded: false, signedIn: false };
+    expect(gateRedirect(signedOut, ['privacy'])).toBeNull();
+    expect(gateRedirect(signedOut, ['terms'])).toBeNull();
+    expect(gateRedirect(signedOut, ['reset-password'])).toBeNull();
+  });
 });
 
 describe('streaks', () => {

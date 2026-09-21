@@ -19,7 +19,7 @@ export type Quality =
   | 'verified_packaged' // label data (barcode / branded database)
   | 'database' // generic reference database (USDA)
   | 'user' // entered or confirmed by the user
-  | 'estimate' // calculated by PlateGauge (templates, modifiers, AI text)
+  | 'estimate' // calculated by Vahla (templates, modifiers, AI text)
   | 'photo_estimate' // AI from a photo
   | 'development'; // local test fixture, never shipped as real data
 

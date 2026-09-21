@@ -31,7 +31,7 @@ const env = (k: string) => {
 };
 
 const MACROS = '"calories": number, "protein": number, "carbs": number, "fat": number, "fiber": number|null, "sugar": number|null, "sodium": number|null';
-const BASE = `You are PlateGauge's nutrition engine. Estimate like a registered dietitian using USDA FoodData Central reference values and realistic US portions. Reply with ONLY one JSON object: no prose, no markdown. Macros in grams, sodium in mg, calories in kcal, all for the serving described. Round to whole numbers. Use null when you can't estimate a value.`;
+const BASE = `You are Vahla's nutrition estimation engine. Use conservative USDA FoodData Central reference values and realistic US portions. Reply with ONLY one JSON object: no prose, no markdown. Macros in grams, sodium in mg, calories in kcal, all for the serving described. Round to whole numbers. Use null when you can't estimate a value.`;
 
 const PROMPTS: Record<string, string> = {
   photo: `${BASE}

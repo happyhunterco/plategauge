@@ -13,4 +13,4 @@ export interface NutritionProvider {
   barcode?(code: string): Promise<BarcodeHit | null>;
 }
 
-export const OFF_UA = 'PlateGauge/1.0 (https://plategauge.app; support@plategauge.app)';
+export const OFF_UA = 'Vahla/1.0 (https://vahla.co; support@vahla.co)';

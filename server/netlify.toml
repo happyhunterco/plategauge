@@ -6,6 +6,26 @@
   node_bundler = "esbuild"
   included_files = []
 
+[[redirects]]
+  from = "/api/checkout"
+  to = "/.netlify/functions/checkout"
+  status = 200
+
+[[redirects]]
+  from = "/api/subscription-status"
+  to = "/.netlify/functions/subscription-status"
+  status = 200
+
+[[redirects]]
+  from = "/api/billing-portal"
+  to = "/.netlify/functions/billing-portal"
+  status = 200
+
+[[redirects]]
+  from = "/api/stripe/webhook"
+  to = "/.netlify/functions/stripe-webhook"
+  status = 200
+
 # Security headers for the API site
 [[headers]]
   for = "/*"

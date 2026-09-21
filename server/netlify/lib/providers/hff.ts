@@ -31,7 +31,7 @@ type HffItem = {
 };
 type HffResponse = { items?: HffItem[] };
 
-const UA = 'PlateGauge/1.0 (https://plategauge.app; free API per healthyfastfood.org/developers)';
+const UA = 'Vahla/1.0 (https://vahla.co; free API per healthyfastfood.org/developers)';
 // This data barely changes day to day; a long cache keeps us well inside "be reasonable."
 const menuCache = new TTLCache<HffItem[]>(6 * 60 * 60_000, 60);
 

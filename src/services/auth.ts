@@ -51,11 +51,13 @@ export async function signUp(email: string, password: string) {
   return { needsConfirmation: false as const };
 }
 
-export async function syncSubscription(userId: string) {
+export async function syncSubscription() {
   try {
+    const token = await accessToken();
+    if (!token) return;
     const { subscription } = await api<{ subscription: { status: string; plan: string | null; current_period_end: number | null } | null }>(
       '/api/subscription-status',
-      { method: 'POST', body: JSON.stringify({ userId }) },
+      { method: 'POST', token },
     );
     useStore.getState().set({ subscription });
   } catch (e) {
@@ -109,7 +111,10 @@ export async function signInWithGoogle() {
 export async function resetPassword(email: string) {
   requireAuth();
   if (authMode === 'development') return;
-  const { error } = await supabase!.auth.resetPasswordForEmail(email, { redirectTo: makeRedirectUri({ path: 'reset-password' }) });
+  // Email links must land on an HTTPS page that can finish Supabase's PKCE flow.
+  // The same route then deep-links into the native UI after the session is established.
+  const redirectTo = Platform.OS === 'web' && typeof window !== 'undefined' ? `${window.location.origin}/reset-password` : 'https://vahla.co/reset-password';
+  const { error } = await supabase!.auth.resetPasswordForEmail(email, { redirectTo });
   if (error) throw new ApiError(friendly(error.message), 'auth');
 }
 

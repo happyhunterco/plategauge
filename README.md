@@ -45,8 +45,8 @@ Nothing ever falls back to invented nutrition. If a source is missing, the scree
 
 1. New site from this repo, base directory = repo root (uses `netlify.toml`: builds the web app into `dist`, functions from `server/netlify/functions`).
 2. Add the server variables listed at the bottom of `.env.example`, plus the `EXPO_PUBLIC_*` ones for the web build.
-3. `EXPO_PUBLIC_API_URL` = the site origin, e.g. `https://plategauge.netlify.app` (no `/api`).
-4. Check `https://YOUR-SITE/api/status` — it lists which services are connected.
+3. `EXPO_PUBLIC_API_URL` = `https://vahla.co` (no `/api`).
+4. Check `https://vahla.co/api/status` — it lists which services are connected.
 
 Endpoints: `/api/food/search`, `/api/food/barcode`, `/api/food/customize`, `/api/crave`, `/api/ai`, `/api/account/delete`, `/api/status`.
 
@@ -54,7 +54,7 @@ Endpoints: `/api/food/search`, `/api/food/barcode`, `/api/food/customize`, `/api
 
 1. Create a project. Run `supabase/migrations/20260917000000_plategauge_init.sql` (SQL editor or `supabase db push`).
 2. Authentication → Providers: enable Email; Apple (Client IDs: your bundle ID, `com.plategauge.app`); Google (web client ID + secret).
-3. Authentication → URL Configuration → Redirect URLs: `plategauge://**` and `https://YOUR-SITE/**`.
+3. Authentication → URL Configuration: set Site URL to `https://vahla.co`; add Redirect URLs `https://vahla.co/**`, `plategauge://**`, and preview/local URLs used by your team. The HTTPS wildcard is required for email confirmation and password reset.
 4. Put the project URL and anon key in the app env, and the service-role key in Netlify only.
 
 ## Layout
@@ -79,3 +79,7 @@ tests/                vitest (Crave scenarios, Build It math, gate, streaks, tar
 - No database has every barcode. Unknown products go to “scan the label / enter it once”.
 - Apple Health / Health Connect: adapter in `src/services/health.ts`, native module not installed yet.
 - Dark mode isn’t supported yet (the app forces light).
+
+## Native release
+
+See `docs/STORE_RELEASE.md`. Production EAS variables must be stored in the EAS `production` environment; placeholder credentials are intentionally not committed.

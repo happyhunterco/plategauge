@@ -69,7 +69,7 @@ export default function Setup() {
 
   const valid = [
     true,
-    age >= 13 && age <= 100 && heightIn >= 48 && heightIn <= 96 && weightLb >= 70 && weightLb <= 700,
+    age >= 18 && age <= 100 && heightIn >= 48 && heightIn <= 96 && weightLb >= 70 && weightLb <= 700,
     f.goal === 'maintain' || (targetLb >= 70 && (f.goal === 'lose' ? targetLb < weightLb : targetLb > weightLb)),
     true,
     true,
@@ -238,6 +238,7 @@ export default function Setup() {
                 </>
               )}
             </View>
+            {f.age && age < 18 ? <Text style={styles.warn}>Vahla is currently for adults age 18 and older.</Text> : null}
             <Field
               ref={wRef}
               label="Current weight"

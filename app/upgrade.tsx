@@ -1,10 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Alert, Linking, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Alert, Linking, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Screen, Button } from '../src/components/UI';
 import { color, font, space } from '../src/theme';
 import { useStore } from '../src/store';
+import { accessToken } from '../src/services/auth';
 import { api } from '../src/services/http';
 
 const FEATURES = [
@@ -13,7 +14,7 @@ const FEATURES = [
   { icon: 'flash' as const, text: 'Crave — name any food, make it fit' },
   { icon: 'build' as const, text: 'Build It — customize any meal' },
   { icon: 'bar-chart' as const, text: 'Progress charts & trends' },
-  { icon: 'people' as const, text: 'Groups & streaks with friends' },
+  { icon: 'barbell' as const, text: 'Personalized training plans' },
 ];
 
 export default function Upgrade() {
@@ -29,9 +30,12 @@ export default function Upgrade() {
     }
     setLoading(true);
     try {
+      const token = await accessToken();
+      if (!token) throw new Error('Sign in again before upgrading.');
       const { url } = await api<{ url: string }>('/api/checkout', {
         method: 'POST',
-        body: JSON.stringify({ plan, userId: account.id, email: account.email }),
+        token,
+        body: JSON.stringify({ plan }),
       });
       if (url) await Linking.openURL(url);
     } catch (e) {
@@ -41,6 +45,8 @@ export default function Upgrade() {
       setLoading(false);
     }
   };
+
+  const native = Platform.OS !== 'web';
 
   return (
     <Screen title="Upgrade">
@@ -57,7 +63,12 @@ export default function Upgrade() {
           ))}
         </View>
 
-        <View style={styles.plans}>
+        {native ? (
+          <View style={styles.nativeNotice}>
+            <Text style={styles.nativeTitle}>Pro purchases are coming to this app.</Text>
+            <Text style={styles.nativeCopy}>All current Vahla features remain available while App Store and Google Play subscriptions are being finalized.</Text>
+          </View>
+        ) : <View style={styles.plans}>
           <Pressable
             style={[styles.planCard, plan === 'annual' && styles.planOn]}
             onPress={() => setPlan('annual')}
@@ -87,9 +98,12 @@ export default function Upgrade() {
               $6.99<Text style={styles.planPer}>/month</Text>
             </Text>
           </Pressable>
-        </View>
+        </View>}
 
-        <Button label={loading ? 'Opening checkout...' : 'Continue'} onPress={checkout} disabled={loading} style={{ marginTop: space.l }} />
+        {!native ? <>
+          <Text style={styles.renewal}>Subscriptions renew automatically until canceled. Manage or cancel anytime from Profile. Taxes may apply.</Text>
+          <Button label={loading ? 'Opening checkout...' : 'Continue'} onPress={checkout} disabled={loading} style={{ marginTop: space.l }} />
+        </> : null}
         <Pressable onPress={() => router.back()} style={{ alignSelf: 'center', marginTop: space.m }}>
           <Text style={{ color: color.sub, fontSize: 14 }}>Maybe later</Text>
         </Pressable>
@@ -115,4 +129,8 @@ const styles = StyleSheet.create({
   planBreak: { fontSize: 13, color: color.faint },
   saveBadge: { backgroundColor: color.gauge, paddingHorizontal: 8, paddingVertical: 2, borderRadius: 8 },
   saveText: { color: '#fff', fontSize: 11, fontWeight: '700' },
+  renewal: { color: color.sub, fontSize: 12, lineHeight: 17, marginTop: space.m },
+  nativeNotice: { padding: space.l, borderRadius: 18, backgroundColor: color.wash, gap: 8 },
+  nativeTitle: { fontFamily: font.display, fontSize: 16, color: color.ink },
+  nativeCopy: { fontSize: 14, lineHeight: 20, color: color.sub },
 });

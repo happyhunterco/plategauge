@@ -7,6 +7,7 @@
     "development": {
       "developmentClient": true,
       "distribution": "internal",
+      "environment": "development",
       "env": {
         "EXPO_PUBLIC_APP_ENV": "development",
         "EXPO_PUBLIC_DATA_MODE": "development"
@@ -14,26 +15,23 @@
     },
     "preview": {
       "distribution": "internal",
+      "environment": "preview",
       "env": {
-        "EXPO_PUBLIC_APP_ENV": "preview",
-        "EXPO_PUBLIC_API_URL": "https://YOUR-SITE.netlify.app",
-        "EXPO_PUBLIC_SUPABASE_URL": "https://YOUR-PROJECT.supabase.co",
-        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "YOUR-ANON-KEY"
+        "EXPO_PUBLIC_APP_ENV": "preview"
       }
     },
     "production": {
       "autoIncrement": true,
+      "environment": "production",
       "env": {
-        "EXPO_PUBLIC_APP_ENV": "production",
-        "EXPO_PUBLIC_API_URL": "https://YOUR-SITE.netlify.app",
-        "EXPO_PUBLIC_SUPABASE_URL": "https://YOUR-PROJECT.supabase.co",
-        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "YOUR-ANON-KEY"
+        "EXPO_PUBLIC_APP_ENV": "production"
       }
     }
   },
   "submit": {
     "production": {
-      "ios": {}
+      "ios": {},
+      "android": {}
     }
   }
 }

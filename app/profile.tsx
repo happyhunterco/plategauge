@@ -12,7 +12,8 @@ import { StoreBadges } from '../src/components/StoreBadges';
 import { Button, Chip, ErrorNote, Field, Group, Row, Screen, Section, Segmented } from '../src/components/UI';
 import { dayKey } from '../src/dates';
 import { fmt, useDayTotals } from '../src/hooks';
-import { authMode, deleteAccount, signOut } from '../src/services/auth';
+import { accessToken, authMode, deleteAccount, signOut } from '../src/services/auth';
+import { api } from '../src/services/http';
 import { dataMode } from '../src/services/foods';
 import { connectHealth, healthServiceName, healthStatus } from '../src/services/health';
 import { applyReminders } from '../src/services/reminders';
@@ -40,6 +41,7 @@ export default function Profile() {
   const [health, setHealth] = useState<string>('');
   const [notifErr, setNotifErr] = useState('');
   const [busy, setBusy] = useState(false);
+  const [billingBusy, setBillingBusy] = useState(false);
   const [allergies, setAllergies] = useState(p?.allergies.join(', ') ?? '');
   const [name, setName] = useState(p?.name ?? '');
   const [username, setUsername] = useState(p?.username ?? '');
@@ -348,9 +350,30 @@ export default function Profile() {
       </Section>
 
       <Section title="Account">
+        {Platform.OS === 'web' && s.subscription ? (
+          <Button
+            label="Manage web subscription"
+            kind="secondary"
+            loading={billingBusy}
+            onPress={async () => {
+              setBillingBusy(true);
+              try {
+                const token = await accessToken();
+                if (!token) throw new Error('Sign in again to manage billing.');
+                const { url } = await api<{ url: string }>('/api/billing-portal', { method: 'POST', token });
+                await Linking.openURL(url);
+              } catch (e) {
+                Alert.alert('Couldn’t open billing', (e as Error).message);
+              } finally {
+                setBillingBusy(false);
+              }
+            }}
+          />
+        ) : null}
         <Button
           label="Change password"
           kind="secondary"
+          style={{ marginTop: Platform.OS === 'web' && s.subscription ? space.s : 0 }}
           onPress={() => router.push('/reset-password')}
           disabled={authMode !== 'supabase' || s.account?.provider !== 'email'}
         />
@@ -368,7 +391,7 @@ export default function Profile() {
           onPress={() =>
             confirm(
               'Delete your account?',
-              'This permanently deletes your account, food log, goals and settings. This can’t be undone.',
+              'This permanently deletes your account, food log, goals and settings and cancels any active Vahla web subscription. This can’t be undone.',
               'Delete',
               async () => {
                 setBusy(true);
