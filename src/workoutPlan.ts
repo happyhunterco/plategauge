@@ -79,6 +79,27 @@ export function dailyWorkout(plan: WorkoutPlan, date: string): DailyWorkout {
   const limitations = plan.limitations ?? [];
   const exercises = baseExercises.map((original) => {
     let x = original;
+    const verticalPull = plan.verticalPull ?? 'lat_pulldown';
+    if (/assisted pull-up|lat pulldown/i.test(x.name)) {
+      if (verticalPull === 'lat_pulldown') x = e(x.id, 'Lat pulldown', 'Lats · biceps', '8–12');
+      if (verticalPull === 'assisted') x = e(x.id, 'Assisted pull-up', 'Lats · biceps', '6–10');
+      if (verticalPull === 'pullups' || (verticalPull === 'auto' && experience !== 'beginner')) {
+        x = e(x.id, experience === 'advanced' ? 'Weighted pull-up' : 'Pull-up', 'Lats · biceps', experience === 'advanced' ? '5–8' : '6–10');
+      }
+      if (verticalPull === 'auto' && experience === 'beginner') x = e(x.id, 'Lat pulldown', 'Lats · biceps', '8–12');
+    }
+    if (experience === 'beginner') {
+      if (/back squat|front squat/i.test(x.name)) x = e(x.id, 'Goblet squat', 'Quads · glutes', '8–12');
+      if (/barbell row/i.test(x.name)) x = e(x.id, 'Chest-supported row', 'Upper back', '8–12');
+      if (/trap-bar deadlift/i.test(x.name)) x = e(x.id, 'Dumbbell Romanian deadlift', 'Hamstrings · glutes', '8–10');
+    }
+    const trainingStyle = plan.trainingStyle ?? 'mixed';
+    if (equipment === 'gym' && trainingStyle === 'machines') {
+      if (/bench press|incline.*press/i.test(x.name)) x = e(x.id, /incline/i.test(x.name) ? 'Incline chest press machine' : 'Chest press machine', 'Chest · triceps', '8–12');
+      if (/back squat|front squat|goblet squat/i.test(x.name)) x = e(x.id, 'Hack squat', 'Quads · glutes', '8–12');
+      if (/shoulder press|overhead press/i.test(x.name)) x = e(x.id, 'Shoulder press machine', 'Shoulders · triceps', '8–12');
+    }
+    if (equipment === 'gym' && trainingStyle === 'free_weights' && /seated cable row/i.test(x.name)) x = e(x.id, 'Single-arm dumbbell row', 'Back · biceps', '8–12');
     if (limitations.includes('knees') && /squat|lunge/i.test(x.name)) x = e(`${x.id}-knee`, 'Glute bridge', 'Glutes · hamstrings', '12–15');
     if (limitations.includes('lower_back') && /deadlift|hinge|romanian|barbell row/i.test(x.name)) x = e(`${x.id}-back`, /row/i.test(x.name) ? 'Chest-supported row' : 'Hip thrust', /row/i.test(x.name) ? 'Upper back' : 'Glutes', '10–12');
     if (limitations.includes('shoulders') && /press|push-up|raise/i.test(x.name)) x = e(`${x.id}-shoulder`, 'Neutral-grip floor press', 'Chest · triceps', '8–12');

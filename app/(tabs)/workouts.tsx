@@ -21,7 +21,7 @@ const CARDIO = [
   { id: 'bike', label: 'Bike' }, { id: 'row', label: 'Row' }, { id: 'intervals', label: 'Intervals' },
 ] as const;
 const EXPERIENCE = [
-  { id: 'beginner', label: 'New to training' }, { id: 'intermediate', label: 'Intermediate' }, { id: 'advanced', label: 'Advanced' },
+  { id: 'beginner', label: 'Beginner · under 1 year' }, { id: 'intermediate', label: 'Intermediate · 1–3 years' }, { id: 'advanced', label: 'Advanced · 3+ years' },
 ] as const;
 const EMPHASIS = [
   { id: 'balanced', label: 'Balanced' }, { id: 'glutes_legs', label: 'Glutes + legs' },
@@ -29,6 +29,13 @@ const EMPHASIS = [
 ] as const;
 const LIMITATIONS = [
   { id: 'knees', label: 'Knee-friendly' }, { id: 'lower_back', label: 'Back-friendly' }, { id: 'shoulders', label: 'Shoulder-friendly' },
+] as const;
+const TRAINING_STYLE = [
+  { id: 'mixed', label: 'A mix of both' }, { id: 'free_weights', label: 'Mostly free weights' }, { id: 'machines', label: 'Mostly machines' },
+] as const;
+const VERTICAL_PULL = [
+  { id: 'lat_pulldown', label: 'Lat pulldowns' }, { id: 'pullups', label: 'Pull-ups' },
+  { id: 'assisted', label: 'Assisted pull-ups' }, { id: 'auto', label: 'Choose for me' },
 ] as const;
 type GoalChoice = NonNullable<WorkoutPlan['goals']>[number];
 type EquipmentChoice = NonNullable<WorkoutPlan['equipmentOptions']>[number];
@@ -46,7 +53,7 @@ export default function Workouts() {
   const weight = useStore((s) => s.profile?.weightLb ?? 170);
   const today = dayKey();
   const [plan, setPlan] = useState(stored);
-  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(!stored.personalized);
   const [guide, setGuide] = useState<PlannedExercise | null>(null);
   const workout = useMemo(() => dailyWorkout(plan, today), [plan, today]);
   const progress = workoutProgress(workout, checks, today);
@@ -100,7 +107,7 @@ export default function Workouts() {
     </View>
 
     <View style={styles.hero}>
-      <View style={styles.heroTop}><View style={styles.sessionIcon}><Ionicons name={workout.recovery ? 'leaf-outline' : 'barbell-outline'} size={22} color="#fff" /></View><View style={{ flex: 1 }}><Text style={styles.heroKicker}>{workout.recovery ? 'RECOVERY DAY' : 'TODAY’S SESSION'}</Text><Text style={styles.heroTitle}>{workout.title}</Text><Text style={styles.heroFocus}>{workout.focus} · {emphasisLabel(plan.emphasis)}</Text></View><Text style={styles.heroPct}>{Math.round(progress.ratio * 100)}%</Text></View>
+      <View style={styles.heroTop}><View style={styles.sessionIcon}><Ionicons name={workout.recovery ? 'leaf-outline' : 'barbell-outline'} size={22} color="#fff" /></View><View style={{ flex: 1 }}><Text style={styles.heroKicker}>{workout.recovery ? 'RECOVERY DAY' : 'TODAY’S SESSION'}</Text><Text style={styles.heroTitle}>{workout.title}</Text><Text style={styles.heroFocus}>{workout.focus} · {experienceLabel(plan.experience)} · {emphasisLabel(plan.emphasis)}</Text></View><Text style={styles.heroPct}>{Math.round(progress.ratio * 100)}%</Text></View>
       <View style={styles.heroTrack}><View style={[styles.heroFill, { width: `${progress.ratio * 100}%` }]} /></View>
       <View style={styles.heroMeta}><Meta icon="time-outline" text={`${workout.duration} min`} /><Meta icon="layers-outline" text={`${workout.exercises.length} movements`} /><Meta icon="pulse-outline" text={`${workout.cardio.minutes} min cardio`} /></View>
     </View>
@@ -135,10 +142,12 @@ export default function Workouts() {
     <Button label={completed ? 'Workout complete' : progress.done < progress.total ? `Complete ${progress.total - progress.done} sets first` : 'Finish workout'} icon={completed ? 'checkmark-circle' : 'checkmark'} disabled={completed || progress.done < progress.total} onPress={logWorkout} style={styles.finish} />
     <View style={styles.next}><Text style={styles.smallLabel}>NEXT SESSION</Text><Text style={styles.nextTitle}>{dailyWorkout(plan, nextTrainingDay(plan, today)).title}</Text><Text style={styles.nextSub}>{longDate(nextTrainingDay(plan, today))}</Text></View>
 
-    <Modal visible={settingsOpen} animationType="slide" presentationStyle="pageSheet" onRequestClose={() => setSettingsOpen(false)}><Screen title="Your training plan" subtitle="Built around your goals, schedule, and equipment." right={<Pressable onPress={() => setSettingsOpen(false)}><Ionicons name="close" size={26} color={color.ink} /></Pressable>}>
+    <Modal visible={settingsOpen} animationType="slide" presentationStyle="pageSheet" onRequestClose={() => setSettingsOpen(false)}><Screen title={plan.personalized ? 'Your training plan' : 'Build your plan'} subtitle={plan.personalized ? 'Update how Vahla programs your training.' : 'A few details make every workout feel built for you.'} right={<Pressable onPress={() => setSettingsOpen(false)}><Ionicons name="close" size={26} color={color.ink} /></Pressable>}>
       <PlanSection title="Goals" hint="Choose all that apply">{GOALS.map((x) => <Chip key={x.id} label={x.label} on={selectedGoals.includes(x.id)} onPress={() => toggleGoal(x.id)} />)}</PlanSection>
-      <PlanSection title="Training experience" hint="This changes volume and progression">{EXPERIENCE.map((x) => <Chip key={x.id} label={x.label} on={(plan.experience ?? 'beginner') === x.id} onPress={() => set('experience', x.id)} />)}</PlanSection>
+      <PlanSection title="What’s your training experience?" hint="This changes exercise selection, volume, and progression">{EXPERIENCE.map((x) => <Chip key={x.id} label={x.label} on={(plan.experience ?? 'beginner') === x.id} onPress={() => set('experience', x.id)} />)}</PlanSection>
       <PlanSection title="What do you want to emphasize?">{EMPHASIS.map((x) => <Chip key={x.id} label={x.label} on={(plan.emphasis ?? 'balanced') === x.id} onPress={() => set('emphasis', x.id)} />)}</PlanSection>
+      <PlanSection title="How do you like to train?">{TRAINING_STYLE.map((x) => <Chip key={x.id} label={x.label} on={(plan.trainingStyle ?? 'mixed') === x.id} onPress={() => set('trainingStyle', x.id)} />)}</PlanSection>
+      <PlanSection title="What should Vahla use for vertical pulls?" hint="This prevents assisted pull-ups from appearing unless you want them">{VERTICAL_PULL.map((x) => <Chip key={x.id} label={x.label} on={(plan.verticalPull ?? 'lat_pulldown') === x.id} onPress={() => set('verticalPull', x.id)} />)}</PlanSection>
       <PlanSection title="Training style">{SPLITS.map((x) => <Chip key={x.id} label={x.label} on={plan.split === x.id} onPress={() => set('split', x.id)} />)}</PlanSection>
       <PlanSection title="Weekly schedule">{([3, 4, 5, 6] as const).map((x) => <Chip key={x} label={`${x} days`} on={plan.days === x} onPress={() => set('days', x)} />)}</PlanSection>
       <PlanSection title="Session length">{([30, 45, 60, 75] as const).map((x) => <Chip key={x} label={`${x} min`} on={plan.minutes === x} onPress={() => set('minutes', x)} />)}</PlanSection>
@@ -146,7 +155,7 @@ export default function Workouts() {
       <PlanSection title="Cardio you enjoy">{CARDIO.map((x) => <Chip key={x.id} label={x.label} on={selectedCardio.includes(x.id)} onPress={() => toggleCardio(x.id)} />)}</PlanSection>
       <PlanSection title="Movement needs" hint="Optional. Choose all that apply">{LIMITATIONS.map((x) => <Chip key={x.id} label={x.label} on={selectedLimitations.includes(x.id)} onPress={() => toggleLimitation(x.id)} />)}</PlanSection>
       <Text style={styles.safety}>Vahla adapts exercise selection, but it does not diagnose injuries. Stop if a movement causes pain.</Text>
-      <Button label="Done" onPress={() => setSettingsOpen(false)} style={{ margin: space.l }} />
+      <Button label={plan.personalized ? 'Save changes' : 'Build my plan'} onPress={() => { save({ ...plan, personalized: true }); setSettingsOpen(false); }} style={{ margin: space.l }} />
     </Screen></Modal>
 
     <Modal visible={!!guide} transparent animationType="fade" onRequestClose={() => setGuide(null)}><View style={styles.modalShade}><View style={styles.guide}><View style={styles.guideIcon}><Ionicons name="body-outline" size={32} color={color.ink} /></View><Text style={styles.guideTitle}>{guide?.name}</Text><Text style={styles.guideMeta}>{guide?.target} · {guide?.sets} sets · {guide?.reps}</Text><Text style={styles.guideCopy}>Move with control through a comfortable range. Keep your core braced, stop before form breaks down, and leave one or two quality reps in reserve.</Text><Button label="Ready" onPress={() => setGuide(null)} /></View></View></Modal>
@@ -155,6 +164,7 @@ export default function Workouts() {
 
 const nextTrainingDay = (plan: WorkoutPlan, date: string) => { for (let i = 1; i <= 7; i += 1) { const next = shiftKey(date, i); if (isTrainingDay(plan, next)) return next; } return shiftKey(date, 1); };
 const emphasisLabel = (emphasis: WorkoutPlan['emphasis']) => ({ balanced: 'Balanced', glutes_legs: 'Glute + leg focus', upper_body: 'Upper-body focus', athletic: 'Athletic focus' })[emphasis ?? 'balanced'];
+const experienceLabel = (experience: WorkoutPlan['experience']) => ({ beginner: 'Beginner', intermediate: 'Intermediate', advanced: 'Advanced' })[experience ?? 'beginner'];
 function Meta({ icon, text }: { icon: ComponentProps<typeof Ionicons>['name']; text: string }) { return <View style={styles.meta}><Ionicons name={icon} size={15} color="#BDBDBD" /><Text style={styles.metaText}>{text}</Text></View>; }
 function PlanSection({ title, hint, children }: { title: string; hint?: string; children: ReactNode }) { return <View style={styles.planSection}><Text style={styles.planTitle}>{title}</Text>{hint ? <Text style={styles.planHint}>{hint}</Text> : null}<View style={styles.chips}>{children}</View></View>; }
 
