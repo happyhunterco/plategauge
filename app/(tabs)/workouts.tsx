@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useMemo, useState, type ComponentProps, type ReactNode } from 'react';
+import { useEffect, useMemo, useState, type ComponentProps, type ReactNode } from 'react';
 import { Alert, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { TopBar } from '../../src/components/Kit';
 import { Button, Chip, Screen, success, tap } from '../../src/components/UI';
@@ -48,7 +48,7 @@ export default function Workouts() {
   const steps = useStore((s) => s.steps);
   const weight = useStore((s) => s.profile?.weightLb ?? 170);
   const today = dayKey();
-  const [plan, setPlan] = useState(stored);
+  const [plan, setPlan] = useState<WorkoutPlan>(() => stored.startedOn ? stored : { ...stored, startedOn: today });
   const [settingsOpen, setSettingsOpen] = useState(!stored.personalized);
   const [guide, setGuide] = useState<PlannedExercise | null>(null);
   const workout = useMemo(() => dailyWorkout(plan, today), [plan, today]);
@@ -60,10 +60,18 @@ export default function Workouts() {
   const selectedCardio: CardioChoice[] = plan.cardioOptions?.length ? plan.cardioOptions : [plan.cardio];
   const selectedLimitations = plan.limitations ?? [];
   const save = (next: WorkoutPlan) => { setPlan(next); updateSettings({ workoutPlan: next }); };
-  const set = <K extends keyof WorkoutPlan>(key: K, value: WorkoutPlan[K]) => save({ ...plan, [key]: value });
+
+  // Existing plans predate rotation anchors. Start them at session one today and
+  // persist the anchor so tomorrow advances instead of starting over.
+  useEffect(() => {
+    if (stored.startedOn) return;
+    updateSettings({ workoutPlan: { ...stored, startedOn: today } });
+  }, [stored, today, updateSettings]);
+
+  const set = <K extends keyof WorkoutPlan>(key: K, value: WorkoutPlan[K]) =>
+    save({ ...plan, [key]: value, ...((key === 'split' || key === 'days') ? { startedOn: today } : {}) });
   const toggleGoal = (value: GoalChoice) => {
-    const withoutGeneral = selectedGoals.filter((x) => x !== 'general');
-    let goals: GoalChoice[] = value === 'general' ? ['general'] : withoutGeneral.includes(value) ? withoutGeneral.filter((x) => x !== value) : [...withoutGeneral, value];
+    let goals: GoalChoice[] = selectedGoals.includes(value) ? selectedGoals.filter((x) => x !== value) : [...selectedGoals, value];
     if (!goals.length) goals = ['general'];
     const goal = goals.includes('strength') ? 'strength' : goals.includes('muscle') && goals.includes('fat_loss') ? 'recomp' : goals.includes('muscle') ? 'muscle' : goals.includes('fat_loss') ? 'fat_loss' : 'general';
     save({ ...plan, goals, goal });
@@ -126,7 +134,7 @@ export default function Workouts() {
             <View style={[styles.exerciseBadge, done === exercise.sets && styles.exerciseBadgeDone]}><Text style={[styles.exerciseBadgeText, done === exercise.sets && { color: '#fff' }]}>{done}/{exercise.sets}</Text></View>
           </Pressable>
           <View style={styles.setRow}>
-            {Array.from({ length: exercise.sets }, (_, index) => { const key = workoutCheckKey(today, workout.id, exercise.id, index); const on = !!checks[key]; return <Pressable key={key} onPress={() => { tap(); toggleCheck(key); }} style={[styles.setBox, on && styles.setBoxOn]} accessibilityRole="checkbox" accessibilityState={{ checked: on }}><Text style={[styles.setBoxText, on && { color: '#fff' }]}>{on ? '✓' : index + 1}</Text></Pressable>; })}
+            {Array.from({ length: exercise.sets }, (_, index) => { const key = workoutCheckKey(today, workout.id, exercise.id, index); const on = !!checks[key]; return <Pressable key={key} hitSlop={6} onPress={() => { tap(); toggleCheck(key); }} style={[styles.setBox, on && styles.setBoxOn]} accessibilityRole="checkbox" accessibilityLabel={`${exercise.name}, set ${index + 1}`} accessibilityState={{ checked: on }}><Text style={[styles.setBoxText, on && { color: '#fff' }]}>{on ? '✓' : index + 1}</Text></Pressable>; })}
             <Text style={styles.restText}>{exercise.rest} rest</Text>
           </View>
         </View>;
@@ -150,7 +158,7 @@ export default function Workouts() {
       <PlanSection title="Cardio you enjoy">{CARDIO.map((x) => <Chip key={x.id} label={x.label} on={selectedCardio.includes(x.id)} onPress={() => toggleCardio(x.id)} />)}</PlanSection>
       <PlanSection title="Movement needs" hint="Optional. Choose all that apply">{LIMITATIONS.map((x) => <Chip key={x.id} label={x.label} on={selectedLimitations.includes(x.id)} onPress={() => toggleLimitation(x.id)} />)}</PlanSection>
       <Text style={styles.safety}>Vahla adapts exercise selection, but it does not diagnose injuries. Stop if a movement causes pain.</Text>
-      <Button label={plan.personalized ? 'Save changes' : 'Build my plan'} onPress={() => { save({ ...plan, personalized: true }); setSettingsOpen(false); }} style={{ margin: space.l }} />
+      <Button label={plan.personalized ? 'Save changes' : 'Build my plan'} onPress={() => { save({ ...plan, startedOn: plan.startedOn ?? today, personalized: true }); setSettingsOpen(false); }} style={{ margin: space.l }} />
     </Screen></Modal>
 
     <Modal visible={!!guide} transparent animationType="fade" onRequestClose={() => setGuide(null)}><View style={styles.modalShade}><View style={styles.guide}><View style={styles.guideIcon}><Ionicons name="body-outline" size={32} color={color.ink} /></View><Text style={styles.guideTitle}>{guide?.name}</Text><Text style={styles.guideMeta}>{guide?.target} · {guide?.sets} sets · {guide?.reps}</Text><Text style={styles.guideCopy}>Move with control through a comfortable range. Keep your core braced, stop before form breaks down, and leave one or two quality reps in reserve.</Text><Button label="Ready" onPress={() => setGuide(null)} /></View></View></Modal>

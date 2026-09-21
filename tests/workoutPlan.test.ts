@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { dailyWorkout, isTrainingDay, workoutCheckKey, workoutProgress } from '../src/workoutPlan';
+import { dailyWorkout, isTrainingDay, trainingSessionIndex, workoutCheckKey, workoutProgress } from '../src/workoutPlan';
 import type { WorkoutPlan } from '../src/store';
 
 const plan: WorkoutPlan = {
@@ -22,6 +22,19 @@ describe('daily workout plan', () => {
     expect(workout.recovery).toBe(true);
     expect(workout.title).toBe('Recover + reset');
     expect(workout.cardio.label).toBe('Easy walk');
+  });
+
+  it('starts a new upper/lower plan at Upper I and follows the plan rotation', () => {
+    const upperLower: WorkoutPlan = { ...plan, split: 'upper_lower', days: 4, startedOn: '2026-09-21' };
+    expect(dailyWorkout(upperLower, '2026-09-21').title).toBe('Upper I');
+    expect(dailyWorkout(upperLower, '2026-09-22').title).toBe('Lower I');
+    expect(dailyWorkout(upperLower, '2026-09-24').title).toBe('Upper II');
+    expect(dailyWorkout(upperLower, '2026-09-26').title).toBe('Lower II');
+    expect(trainingSessionIndex(upperLower, '2026-09-26')).toBe(3);
+  });
+
+  it('defaults an older plan without a start date to session one on Monday', () => {
+    expect(dailyWorkout({ ...plan, split: 'upper_lower', days: 4 }, '2026-09-21').title).toBe('Upper I');
   });
 
   it('tracks progress for each set independently', () => {

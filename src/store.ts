@@ -41,6 +41,8 @@ export type WorkoutPlan = {
   emphasis?: 'balanced' | 'glutes_legs' | 'upper_body' | 'athletic';
   limitations?: ('knees' | 'lower_back' | 'shoulders')[];
   trainingStyle?: 'mixed' | 'free_weights' | 'machines';
+  /** First day of this program rotation. Keeps a new plan from starting midway through its sessions. */
+  startedOn?: string;
   personalized?: boolean;
 };
 

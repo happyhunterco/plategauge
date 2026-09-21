@@ -50,10 +50,27 @@ const serialDay = (date: string) => { const [y, m, d] = date.split('-').map(Numb
 const weekday = (date: string) => (new Date(`${date}T12:00:00`).getDay() + 6) % 7;
 export const isTrainingDay = (plan: WorkoutPlan, date: string) => ACTIVE_DAYS[plan.days].includes(weekday(date));
 
+/** Zero-based session number since the plan began, counting scheduled training days only. */
+export function trainingSessionIndex(plan: WorkoutPlan, date: string) {
+  const dateSerial = serialDay(date);
+  const fallbackMonday = dateSerial - weekday(date);
+  const configuredStart = plan.startedOn ? serialDay(plan.startedOn) : fallbackMonday;
+  const startSerial = configuredStart <= dateSerial ? configuredStart : fallbackMonday;
+  const elapsed = dateSerial - startSerial;
+  const fullWeeks = Math.floor(elapsed / 7);
+  const remainingDays = elapsed % 7;
+  const startWeekday = (weekday(date) - (elapsed % 7) + 7) % 7;
+  let sessions = fullWeeks * plan.days;
+  for (let offset = 0; offset <= remainingDays; offset += 1) {
+    if (ACTIVE_DAYS[plan.days].includes((startWeekday + offset) % 7)) sessions += 1;
+  }
+  return Math.max(0, sessions - 1);
+}
+
 export function dailyWorkout(plan: WorkoutPlan, date: string): DailyWorkout {
   const cardioOptions = plan.cardioOptions?.length ? plan.cardioOptions : [plan.cardio];
-  const serial = serialDay(date);
-  const cardio = cardioOptions[Math.abs(serial) % cardioOptions.length] ?? plan.cardio;
+  const sessionIndex = trainingSessionIndex(plan, date);
+  const cardio = cardioOptions[sessionIndex % cardioOptions.length] ?? plan.cardio;
   const cardioMins = plan.goal === 'fat_loss' || plan.goal === 'recomp' || plan.goals?.includes('fat_loss') ? Math.min(30, Math.max(15, Math.round(plan.minutes * 0.35))) : Math.min(20, Math.max(10, Math.round(plan.minutes * 0.25)));
   if (!isTrainingDay(plan, date)) return {
     id: 'recovery', title: 'Recover + reset', focus: 'Mobility and easy movement', recovery: true, duration: Math.min(30, plan.minutes),
@@ -64,8 +81,7 @@ export function dailyWorkout(plan: WorkoutPlan, date: string): DailyWorkout {
     ], cardio: { kind: 'walk', label: 'Easy walk', minutes: 20, detail: 'Conversational pace · recovery effort' },
   };
   const pool = SESSIONS[plan.split];
-  const rotation = Math.floor((serial * plan.days) / 7);
-  const session = pool[((rotation % pool.length) + pool.length) % pool.length];
+  const session = pool[sessionIndex % pool.length];
   const equipment = plan.equipmentOptions?.[0] ?? plan.equipment;
   const strengthGoal = plan.goal === 'strength' || plan.goals?.includes('strength');
   const muscleGoal = plan.goal === 'muscle' || plan.goal === 'recomp' || plan.goals?.includes('muscle');
