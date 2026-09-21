@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Gauge } from '../../src/components/Gauge';
-import { DevDataBanner, GradientBox, TopBar } from '../../src/components/Kit';
+import { DevDataBanner, TopBar } from '../../src/components/Kit';
 import { CalorieFacts, MacroTiles, Panels, RecentlyLogged, useDaySwipe, WeekStrip } from '../../src/components/Today';
 import { Group, macroLine, Row, Section, tap } from '../../src/components/UI';
 import { fmt, useDayTotals } from '../../src/hooks';
@@ -22,13 +22,14 @@ export default function Today() {
   const router = useRouter();
   const day = useStore((s) => s.day);
   const goals = useStore((s) => s.goals);
+  const name = useStore((s) => s.profile?.name);
   const t = useDayTotals(day);
   const swipe = useDaySwipe();
   const wide = useWide();
   if (!goals) return null;
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#fff' }}>
+    <View style={{ flex: 1, backgroundColor: color.plate }}>
       <TopBar max={1160 - space.m * 2} />
       <ScrollView contentContainerStyle={{ paddingBottom: wide ? 48 : 120 }}>
         {dataMode === 'development' ? (
@@ -38,6 +39,11 @@ export default function Today() {
           <View style={wide ? styles.colLeft : undefined}>
             <WeekStrip />
 
+            <View style={styles.greeting}>
+              <Text style={styles.greetingSmall}>Good {new Date().getHours() < 12 ? 'morning' : new Date().getHours() < 18 ? 'afternoon' : 'evening'},</Text>
+              <Text style={styles.greetingName}>{name || 'there'}</Text>
+            </View>
+
             <View {...swipe.panHandlers} style={styles.summary} accessibilityHint="Swipe left or right to change day">
               <Gauge eaten={t.eaten.calories} goal={t.budget} size={220} />
               <CalorieFacts day={day} />
@@ -45,11 +51,12 @@ export default function Today() {
 
             <MacroTiles day={day} />
 
-            <View style={styles.quickRow}>
+            <View style={styles.wellnessGrid}>
               {[
-                { label: 'Search', icon: 'search' as const, to: '/log' as const },
-                { label: 'Scan', icon: 'barcode-outline' as const, to: '/scan?mode=barcode' as const },
-                { label: 'Quick add', icon: 'flash-outline' as const, to: '/log?mode=quick' as const },
+                { label: 'Nutrition', sub: 'Log meals', icon: 'restaurant-outline' as const, to: '/log' as const, bg: '#EAF1EA' },
+                { label: 'Workouts', sub: 'Train smarter', icon: 'barbell-outline' as const, to: '/workouts' as const, bg: '#E9EDF2' },
+                { label: 'Crave', sub: 'Find healthy options', icon: 'nutrition-outline' as const, to: '/crave' as const, bg: '#F2EDE5' },
+                { label: 'Menus', sub: 'Plan ahead', icon: 'clipboard-outline' as const, to: '/crave' as const, bg: '#F0ECE8' },
               ].map((a) => (
                 <Pressable
                   key={a.label}
@@ -58,30 +65,14 @@ export default function Today() {
                     router.push(a.to);
                   }}
                   accessibilityRole="button"
-                  style={({ pressed }) => [styles.quick, pressed && { opacity: 0.8 }]}
+                  style={({ pressed }) => [styles.wellnessTile, { backgroundColor: a.bg }, pressed && { opacity: 0.8 }]}
                 >
-                  <Ionicons name={a.icon} size={18} color={color.ink} />
-                  <Text style={styles.quickText}>{a.label}</Text>
+                  <Ionicons name={a.icon} size={24} color={color.ink} />
+                  <Text style={styles.tileTitle}>{a.label}</Text>
+                  <Text style={styles.tileSub}>{a.sub}</Text>
                 </Pressable>
               ))}
             </View>
-
-            <Pressable
-              onPress={() => {
-                tap();
-                router.navigate('/crave');
-              }}
-              accessibilityRole="button"
-              style={({ pressed }) => pressed && { opacity: 0.92 }}
-            >
-              <GradientBox style={styles.crave}>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.craveTitle}>Fuel your next move</Text>
-                  <Text style={styles.craveSub}>Name any food. We’ll make it fit your {fmt(Math.max(t.left.calories, 0))} left.</Text>
-                </View>
-                <Ionicons name="arrow-forward" size={20} color="#fff" />
-              </GradientBox>
-            </Pressable>
 
             {wide ? (
               <>
@@ -161,31 +152,14 @@ const styles = StyleSheet.create({
   cols: { flexDirection: 'row', alignItems: 'flex-start', gap: space.xl, width: '100%', maxWidth: 1160, alignSelf: 'center', paddingHorizontal: space.m },
   colLeft: { flex: 1, minWidth: 0, maxWidth: 520 },
   colRight: { flex: 1.1, minWidth: 0 },
+  greeting: { paddingHorizontal: space.l, paddingTop: space.m },
+  greetingSmall: { fontSize: 14, color: color.sub },
+  greetingName: { fontFamily: font.displayBold, fontSize: 25, color: color.ink, marginTop: 1 },
   summary: { alignItems: 'stretch', paddingTop: space.s },
-  quickRow: { flexDirection: 'row', gap: space.s, paddingHorizontal: space.l, marginTop: space.l },
-  quick: {
-    flex: 1,
-    flexDirection: 'row',
-    gap: 6,
-    minHeight: 44,
-    borderRadius: 12,
-    backgroundColor: color.wash,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  quickText: { fontSize: 14, fontWeight: '600', color: color.ink },
-  crave: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: space.m,
-    marginHorizontal: space.l,
-    marginTop: space.m,
-    padding: space.l,
-    borderRadius: 18,
-    backgroundColor: color.ink,
-  },
-  craveTitle: { fontFamily: font.display, fontSize: 17, color: '#fff' },
-  craveSub: { color: '#A9BAD3', fontSize: 13, marginTop: 2 },
+  wellnessGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: space.s, paddingHorizontal: space.l, marginTop: space.l },
+  wellnessTile: { width: '48%', flexGrow: 1, minHeight: 108, borderRadius: 18, alignItems: 'center', justifyContent: 'center', padding: space.m },
+  tileTitle: { fontFamily: font.display, fontSize: 15, color: color.ink, marginTop: 7 },
+  tileSub: { fontSize: 12, color: color.sub, marginTop: 2, textAlign: 'center' },
   add: { flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 44 },
   mealCals: { fontFamily: font.displayMed, color: color.sub, fontSize: 14 },
   none: { color: color.faint, fontSize: 14, paddingVertical: 2 },

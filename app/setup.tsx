@@ -139,8 +139,8 @@ export default function Setup() {
               <LogoMark size={120} />
               <LogoWordmark width={126} />
             </View>
-            <Text style={styles.tagline}>Built for your best.</Text>
-            <Text style={styles.pitch}>Personalized nutrition, training, and daily progress—working toward one stronger you.</Text>
+            <Text style={styles.tagline}>Built for better living.</Text>
+            <Text style={styles.pitch}>Personalized nutrition, training, and daily progress, all working toward a healthier life.</Text>
             <View style={styles.welcomeActions}>
               <Button label="Get started" onPress={() => setStep(1)} />
               <Button label="I already have an account" kind="ghost" onPress={() => router.push({ pathname: '/account', params: { mode: 'signin' } })} />

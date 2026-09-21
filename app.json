@@ -35,7 +35,7 @@
       "shortName": "Vahla",
       "themeColor": "#FFFFFF",
       "backgroundColor": "#FFFFFF",
-      "description": "Personalized nutrition, workouts, and daily progress—built for your best.",
+      "description": "Personalized nutrition, workouts, and daily progress—built for better living.",
       "lang": "en"
     },
     "plugins": [
@@ -77,6 +77,6 @@
     "experiments": {
       "typedRoutes": false
     },
-    "description": "Personalized nutrition, workouts, and daily progress—built for your best."
+    "description": "Personalized nutrition, workouts, and daily progress—built for better living."
   }
 }

@@ -29,11 +29,14 @@ export type Goals = { calories: number; protein: number; carbs: number; fat: num
 
 export type WorkoutPlan = {
   split: 'ppl' | 'upper_lower' | 'full_body' | 'strength_cardio';
-  goal: 'general' | 'muscle' | 'strength' | 'fat_loss';
+  goal: 'general' | 'muscle' | 'strength' | 'fat_loss' | 'recomp';
   days: 3 | 4 | 5 | 6;
   minutes: 30 | 45 | 60 | 75;
   equipment: 'gym' | 'home' | 'bodyweight';
   cardio: 'walk' | 'incline_walk' | 'run' | 'bike' | 'row' | 'intervals';
+  goals?: ('general' | 'muscle' | 'strength' | 'fat_loss')[];
+  equipmentOptions?: ('gym' | 'home' | 'bodyweight')[];
+  cardioOptions?: ('walk' | 'incline_walk' | 'run' | 'bike' | 'row' | 'intervals')[];
 };
 
 export type Settings = {
@@ -97,7 +100,7 @@ export const DEFAULT_SETTINGS: Settings = {
   waterGoalOz: 96,
   stepGoal: 8000,
   notifications: { meals: false, water: false, weighIn: false },
-  workoutPlan: { split: 'full_body', goal: 'general', days: 3, minutes: 45, equipment: 'gym', cardio: 'walk' },
+  workoutPlan: { split: 'full_body', goal: 'general', goals: ['general'], days: 3, minutes: 45, equipment: 'gym', equipmentOptions: ['gym'], cardio: 'walk', cardioOptions: ['walk'] },
 };
 
 type State = {
@@ -112,6 +115,7 @@ type State = {
   water: Water[];
   weights: Weight[];
   activities: Activity[];
+  workoutChecks: Record<string, boolean>;
   steps: Record<string, number>;
   savedFoods: FoodItem[];
   customFoods: FoodItem[];
@@ -154,6 +158,7 @@ type State = {
   removeWeight: (date: string) => void;
   addActivity: (a: Omit<Activity, 'id' | 'createdAt'>) => boolean;
   removeActivity: (id: string) => void;
+  toggleWorkoutCheck: (key: string) => void;
   setSteps: (date: string, n: number) => void;
 
   toggleSaved: (f: FoodItem) => void;
@@ -182,6 +187,7 @@ const EMPTY = {
   water: [],
   weights: [],
   activities: [],
+  workoutChecks: {},
   steps: {},
   savedFoods: [],
   customFoods: [],
@@ -290,6 +296,7 @@ export const useStore = create<State>()(
         return true;
       },
       removeActivity: (id) => set({ activities: get().activities.filter((a) => a.id !== id) }),
+      toggleWorkoutCheck: (key) => set({ workoutChecks: { ...get().workoutChecks, [key]: !get().workoutChecks[key] } }),
       setSteps: (date, n) => set({ steps: { ...get().steps, [date]: n } }),
 
       toggleSaved: (f) => {
@@ -343,6 +350,7 @@ export const useStore = create<State>()(
         water: s.water,
         weights: s.weights,
         activities: s.activities,
+        workoutChecks: s.workoutChecks,
         steps: s.steps,
         savedFoods: s.savedFoods,
         customFoods: s.customFoods,

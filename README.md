@@ -1,6 +1,6 @@
 # Vahla
 
-**Built for your best.** Personalized nutrition, workouts, and daily progress in one health and wellness app.
+**Built for better living.** Personalized nutrition, workouts, and daily progress in one health and wellness app.
 
 Expo SDK 57 · React Native 0.86 · Expo Router · Zustand · Supabase auth · Netlify Functions
 

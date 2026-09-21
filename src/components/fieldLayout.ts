@@ -4,7 +4,7 @@
  * so they overflowed into the neighboring field and the focus ring appeared to spill over.
  */
 export const FIELD_BORDER = 2;
-export const FOCUS_COLOR = '#1A1A1A';
+export const CARET_COLOR = '#0A84FF';
 
 export function fieldLayout(focused: boolean) {
   return {
@@ -14,7 +14,7 @@ export function fieldLayout(focused: boolean) {
       minWidth: 0,
       minHeight: 48,
       borderWidth: FIELD_BORDER,
-      borderColor: focused ? FOCUS_COLOR : 'transparent',
+      borderColor: 'transparent',
       margin: 0,
     },
     input: {
@@ -22,6 +22,8 @@ export function fieldLayout(focused: boolean) {
       minWidth: 0,
       width: '100%' as const,
       outlineWidth: 0,
+      outlineColor: 'transparent',
+      caretColor: CARET_COLOR,
     },
   };
 }

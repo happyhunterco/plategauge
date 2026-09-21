@@ -1,7 +1,7 @@
 {
   "name": "Vahla",
   "short_name": "Vahla",
-  "description": "Personalized nutrition, workouts, and daily progress—built for your best.",
+  "description": "Personalized nutrition, workouts, and daily progress—built for better living.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

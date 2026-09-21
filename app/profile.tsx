@@ -149,6 +149,9 @@ export default function Profile() {
           <Row title="Protein · Carbs · Fat" value={`${s.goals.protein} · ${s.goals.carbs} · ${s.goals.fat}g`} onPress={() => router.push('/targets')} />
           <Row title="Pace" value={p.goal === 'maintain' ? 'Maintain' : `${p.ratePerWeek} lb/week`} onPress={() => router.push('/targets')} last />
         </Group>
+        <Group style={{ marginTop: space.m }}>
+          <Row title="Progress and trends" detail="Weight, calories, macros, and streaks" onPress={() => router.push('/progress')} last />
+        </Group>
         <Text style={styles.label}>Add activity to my food budget</Text>
         <Segmented
           value={s.settings.exerciseMode}

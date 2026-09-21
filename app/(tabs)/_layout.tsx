@@ -13,7 +13,7 @@ const TABS: Record<string, { label: string; icon: IconName; on: IconName }> = {
   index: { label: 'Today', icon: 'disc-outline', on: 'disc' },
   log: { label: 'Log', icon: 'search-outline', on: 'search' },
   crave: { label: 'Crave', icon: 'restaurant-outline', on: 'restaurant' },
-  progress: { label: 'Progress', icon: 'stats-chart-outline', on: 'stats-chart' },
+  workouts: { label: 'Workouts', icon: 'barbell-outline', on: 'barbell' },
 };
 
 function TabBar({ state, navigation }: BottomTabBarProps) {
@@ -124,7 +124,8 @@ export default function TabsLayout() {
       <Tabs.Screen name="index" />
       <Tabs.Screen name="log" />
       <Tabs.Screen name="crave" />
-      <Tabs.Screen name="progress" />
+      <Tabs.Screen name="workouts" />
+      <Tabs.Screen name="progress" options={{ href: null }} />
     </Tabs>
   );
 }

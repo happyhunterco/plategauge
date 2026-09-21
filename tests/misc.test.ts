@@ -149,12 +149,14 @@ describe('input focus layout (onboarding bug)', () => {
     expect(l.input.minWidth).toBe(0);
     expect(l.input.width).toBe('100%');
   });
-  it('keeps the same border width focused and unfocused (no layout shift) and only colors the focused field', () => {
+  it('keeps fields ring-free when focused so only the caret is visible', () => {
     const a = fieldLayout(false);
     const b = fieldLayout(true);
     expect(a.container.borderWidth).toBe(b.container.borderWidth);
     expect(a.container.borderColor).toBe('transparent');
-    expect(b.container.borderColor).not.toBe('transparent');
+    expect(b.container.borderColor).toBe('transparent');
+    expect(b.input.outlineWidth).toBe(0);
+    expect(b.input.caretColor).toBe('#0A84FF');
     expect(a.container.margin ?? 0).toBe(0);
   });
 });
