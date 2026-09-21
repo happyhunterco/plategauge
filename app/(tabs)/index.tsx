@@ -56,7 +56,7 @@ export default function Today() {
                 { label: 'Nutrition', sub: 'Log meals', icon: 'restaurant-outline' as const, to: '/log' as const, bg: '#EAF1EA' },
                 { label: 'Workouts', sub: 'Train smarter', icon: 'barbell-outline' as const, to: '/workouts' as const, bg: '#E9EDF2' },
                 { label: 'Crave', sub: 'Find healthy options', icon: 'nutrition-outline' as const, to: '/crave' as const, bg: '#F2EDE5' },
-                { label: 'Menus', sub: 'Plan ahead', icon: 'clipboard-outline' as const, to: '/crave' as const, bg: '#F0ECE8' },
+                { label: 'Menus', sub: 'Plan ahead', icon: 'clipboard-outline' as const, to: '/menus' as const, bg: '#F0ECE8' },
               ].map((a) => (
                 <Pressable
                   key={a.label}

@@ -76,6 +76,7 @@ export default function RootLayout() {
         <Stack.Screen name="recipe" options={{ title: 'Create recipe' }} />
         <Stack.Screen name="quick" options={{ presentation: 'modal', title: '' }} />
         <Stack.Screen name="kitchen" options={{ title: 'Cook with what you have' }} />
+        <Stack.Screen name="menus" options={{ headerShown: false }} />
         <Stack.Screen name="profile" options={{ title: 'Profile' }} />
         <Stack.Screen name="targets" options={{ title: 'Goals & targets' }} />
       </Stack>

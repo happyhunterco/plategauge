@@ -1,4 +1,4 @@
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text } from 'react-native';
 import { Screen } from '../src/components/UI';
 import { color, font, space } from '../src/theme';
 

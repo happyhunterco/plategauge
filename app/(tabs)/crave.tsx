@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
-import { useMemo, useState } from 'react';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import type { CraveResult, ExactResult } from '../../shared/crave';
 import type { FitPlan } from '../../shared/customize';
@@ -22,11 +22,12 @@ const EMPTY_MENU: FoodItem[] = [];
 
 export default function Crave() {
   const router = useRouter();
+  const params = useLocalSearchParams<{ q?: string }>();
   const left = useLeftToday();
   const profile = useStore((s) => s.profile);
   const stage = useStore((s) => s.stage);
   const setBuild = useHandoff((s) => s.setBuild);
-  const [text, setText] = useState('');
+  const [text, setText] = useState(params.q ?? '');
   const [answers, setAnswers] = useState<Record<string, Partial<Intent>>>({});
   const [result, setResult] = useState<CraveResult | null>(null);
   const [busy, setBusy] = useState(false);
@@ -35,6 +36,7 @@ export default function Crave() {
   const [opening, setOpening] = useState<string | null>(null);
   const [menuQuery, setMenuQuery] = useState('');
   const [menuCategory, setMenuCategory] = useState('all');
+  const openedQuery = useRef(false);
 
   const prefs = { restrictions: profile?.restrictions ?? [], allergies: profile?.allergies ?? [] };
   const favorites = (profile?.favoriteRestaurants ?? []).map((id) => restaurantById(id)).filter(Boolean);
@@ -54,6 +56,15 @@ export default function Crave() {
       setBusy(false);
     }
   };
+
+  useEffect(() => {
+    if (!openedQuery.current && params.q?.trim()) {
+      openedQuery.current = true;
+      run(params.q, {});
+    }
+  // The route query should open once; subsequent searches are controlled by the field.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [params.q]);
 
   const answer = (id: string, patch: Partial<Intent>) => {
     const next = { ...answers, [id]: patch };
