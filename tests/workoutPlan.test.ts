@@ -48,14 +48,10 @@ describe('daily workout plan', () => {
     expect(personalized.exercises.some((exercise) => /back squat|lunge/i.test(exercise.name))).toBe(false);
   });
 
-  it('uses the selected vertical pulling movement instead of assuming assistance', () => {
+  it('programs vertical pulls without assuming assistance', () => {
     const dates = ['2026-09-21', '2026-09-22', '2026-09-23', '2026-09-24', '2026-09-25', '2026-09-26'];
-    const pulldownNames = dates.flatMap((date) => dailyWorkout({ ...plan, split: 'ppl', days: 6, verticalPull: 'lat_pulldown' }, date).exercises.map((exercise) => exercise.name));
+    const pulldownNames = dates.flatMap((date) => dailyWorkout({ ...plan, split: 'ppl', days: 6 }, date).exercises.map((exercise) => exercise.name));
     expect(pulldownNames.some((name) => name === 'Lat pulldown')).toBe(true);
     expect(pulldownNames.some((name) => /assisted pull-up/i.test(name))).toBe(false);
-
-    const pullupNames = dates.flatMap((date) => dailyWorkout({ ...plan, split: 'ppl', days: 6, experience: 'advanced', verticalPull: 'pullups' }, date).exercises.map((exercise) => exercise.name));
-    expect(pullupNames.some((name) => name === 'Weighted pull-up')).toBe(true);
-    expect(pullupNames.some((name) => /assisted pull-up/i.test(name))).toBe(false);
   });
 });

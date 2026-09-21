@@ -18,7 +18,7 @@ const SESSIONS: Record<WorkoutPlan['split'], Session[]> = {
   upper_lower: [
     { id: 'upper-a', title: 'Upper I', focus: 'Press and pull', exercises: [e('bench', 'Bench press', 'Chest · triceps', '6–8'), e('row', 'Chest-supported row', 'Upper back', '8–10'), e('press', 'Shoulder press', 'Shoulders', '8–10'), e('pulldown', 'Lat pulldown', 'Lats · biceps', '10–12'), e('arms', 'Cable curl + pressdown', 'Arms', '12 each')] },
     { id: 'lower-a', title: 'Lower I', focus: 'Squat emphasis', exercises: [e('squat', 'Back squat', 'Quads · glutes', '5–8'), e('rdl', 'Romanian deadlift', 'Hamstrings', '8–10'), e('lunge', 'Walking lunge', 'Legs', '10 each'), e('curl', 'Leg curl', 'Hamstrings', '10–15'), e('calf', 'Standing calf raise', 'Calves', '12–15')] },
-    { id: 'upper-b', title: 'Upper II', focus: 'Back and shoulders', exercises: [e('pullup', 'Assisted pull-up', 'Back · biceps', '6–10'), e('incline', 'Incline dumbbell press', 'Upper chest', '8–12'), e('one-row', 'Single-arm row', 'Back', '10 each'), e('lateral', 'Lateral raise', 'Shoulders', '12–15'), e('facepull', 'Face pull', 'Rear delts', '12–15')] },
+    { id: 'upper-b', title: 'Upper II', focus: 'Back and shoulders', exercises: [e('pulldown', 'Lat pulldown', 'Back · biceps', '8–12'), e('incline', 'Incline dumbbell press', 'Upper chest', '8–12'), e('one-row', 'Single-arm row', 'Back', '10 each'), e('lateral', 'Lateral raise', 'Shoulders', '12–15'), e('facepull', 'Face pull', 'Rear delts', '12–15')] },
     { id: 'lower-b', title: 'Lower II', focus: 'Hinge emphasis', exercises: [e('deadlift', 'Trap-bar deadlift', 'Posterior chain', '4–6'), e('front-squat', 'Front squat', 'Quads · core', '8–10'), e('hip-thrust', 'Hip thrust', 'Glutes', '8–12'), e('split-squat', 'Split squat', 'Legs', '10 each'), e('carry', 'Farmer carry', 'Core · grip', '40 sec')] },
   ],
   ppl: [
@@ -26,7 +26,7 @@ const SESSIONS: Record<WorkoutPlan['split'], Session[]> = {
     { id: 'pull-a', title: 'Pull', focus: 'Back · biceps', exercises: [e('pulldown', 'Lat pulldown', 'Lats', '8–12'), e('row', 'Chest-supported row', 'Upper back', '8–12'), e('one-row', 'Single-arm row', 'Back', '10 each'), e('facepull', 'Face pull', 'Rear delts', '12–15'), e('curl', 'Dumbbell curl', 'Biceps', '10–12')] },
     { id: 'legs-a', title: 'Legs', focus: 'Quads · glutes · hamstrings', exercises: [e('squat', 'Back squat', 'Quads · glutes', '6–8'), e('rdl', 'Romanian deadlift', 'Hamstrings', '8–10'), e('lunge', 'Walking lunge', 'Legs', '10 each'), e('curl', 'Leg curl', 'Hamstrings', '10–15'), e('calf', 'Standing calf raise', 'Calves', '12–15')] },
     { id: 'push-b', title: 'Push II', focus: 'Shoulders · upper chest', exercises: [e('press', 'Shoulder press', 'Shoulders', '6–8'), e('incline', 'Incline press', 'Upper chest', '8–10'), e('pushup', 'Controlled push-up', 'Chest', 'AMRAP − 2'), e('lateral', 'Cable lateral raise', 'Side delts', '12–15'), e('triceps', 'Overhead triceps extension', 'Triceps', '10–15')] },
-    { id: 'pull-b', title: 'Pull II', focus: 'Lats · upper back', exercises: [e('pullup', 'Assisted pull-up', 'Lats', '6–10'), e('row', 'Seated cable row', 'Back', '8–12'), e('rear-delt', 'Rear-delt fly', 'Rear delts', '12–15'), e('back-ext', 'Back extension', 'Lower back · glutes', '10–15'), e('curl', 'Hammer curl', 'Biceps', '10–12')] },
+    { id: 'pull-b', title: 'Pull II', focus: 'Lats · upper back', exercises: [e('pulldown', 'Lat pulldown', 'Lats', '8–12'), e('row', 'Seated cable row', 'Back', '8–12'), e('rear-delt', 'Rear-delt fly', 'Rear delts', '12–15'), e('back-ext', 'Back extension', 'Lower back · glutes', '10–15'), e('curl', 'Hammer curl', 'Biceps', '10–12')] },
     { id: 'legs-b', title: 'Legs II', focus: 'Glutes · posterior chain', exercises: [e('deadlift', 'Trap-bar deadlift', 'Posterior chain', '4–6'), e('front-squat', 'Front squat', 'Quads · core', '8–10'), e('hip-thrust', 'Hip thrust', 'Glutes', '8–12'), e('split-squat', 'Split squat', 'Legs', '10 each'), e('calf', 'Seated calf raise', 'Calves', '12–15')] },
   ],
   strength_cardio: [
@@ -79,15 +79,6 @@ export function dailyWorkout(plan: WorkoutPlan, date: string): DailyWorkout {
   const limitations = plan.limitations ?? [];
   const exercises = baseExercises.map((original) => {
     let x = original;
-    const verticalPull = plan.verticalPull ?? 'lat_pulldown';
-    if (/assisted pull-up|lat pulldown/i.test(x.name)) {
-      if (verticalPull === 'lat_pulldown') x = e(x.id, 'Lat pulldown', 'Lats · biceps', '8–12');
-      if (verticalPull === 'assisted') x = e(x.id, 'Assisted pull-up', 'Lats · biceps', '6–10');
-      if (verticalPull === 'pullups' || (verticalPull === 'auto' && experience !== 'beginner')) {
-        x = e(x.id, experience === 'advanced' ? 'Weighted pull-up' : 'Pull-up', 'Lats · biceps', experience === 'advanced' ? '5–8' : '6–10');
-      }
-      if (verticalPull === 'auto' && experience === 'beginner') x = e(x.id, 'Lat pulldown', 'Lats · biceps', '8–12');
-    }
     if (experience === 'beginner') {
       if (/back squat|front squat/i.test(x.name)) x = e(x.id, 'Goblet squat', 'Quads · glutes', '8–12');
       if (/barbell row/i.test(x.name)) x = e(x.id, 'Chest-supported row', 'Upper back', '8–12');

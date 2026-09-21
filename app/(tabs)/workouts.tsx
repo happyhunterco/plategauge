@@ -33,10 +33,6 @@ const LIMITATIONS = [
 const TRAINING_STYLE = [
   { id: 'mixed', label: 'A mix of both' }, { id: 'free_weights', label: 'Mostly free weights' }, { id: 'machines', label: 'Mostly machines' },
 ] as const;
-const VERTICAL_PULL = [
-  { id: 'lat_pulldown', label: 'Lat pulldowns' }, { id: 'pullups', label: 'Pull-ups' },
-  { id: 'assisted', label: 'Assisted pull-ups' }, { id: 'auto', label: 'Choose for me' },
-] as const;
 type GoalChoice = NonNullable<WorkoutPlan['goals']>[number];
 type EquipmentChoice = NonNullable<WorkoutPlan['equipmentOptions']>[number];
 type CardioChoice = NonNullable<WorkoutPlan['cardioOptions']>[number];
@@ -147,7 +143,6 @@ export default function Workouts() {
       <PlanSection title="What’s your training experience?" hint="This changes exercise selection, volume, and progression">{EXPERIENCE.map((x) => <Chip key={x.id} label={x.label} on={(plan.experience ?? 'beginner') === x.id} onPress={() => set('experience', x.id)} />)}</PlanSection>
       <PlanSection title="What do you want to emphasize?">{EMPHASIS.map((x) => <Chip key={x.id} label={x.label} on={(plan.emphasis ?? 'balanced') === x.id} onPress={() => set('emphasis', x.id)} />)}</PlanSection>
       <PlanSection title="How do you like to train?">{TRAINING_STYLE.map((x) => <Chip key={x.id} label={x.label} on={(plan.trainingStyle ?? 'mixed') === x.id} onPress={() => set('trainingStyle', x.id)} />)}</PlanSection>
-      <PlanSection title="What should Vahla use for vertical pulls?" hint="This prevents assisted pull-ups from appearing unless you want them">{VERTICAL_PULL.map((x) => <Chip key={x.id} label={x.label} on={(plan.verticalPull ?? 'lat_pulldown') === x.id} onPress={() => set('verticalPull', x.id)} />)}</PlanSection>
       <PlanSection title="Training style">{SPLITS.map((x) => <Chip key={x.id} label={x.label} on={plan.split === x.id} onPress={() => set('split', x.id)} />)}</PlanSection>
       <PlanSection title="Weekly schedule">{([3, 4, 5, 6] as const).map((x) => <Chip key={x} label={`${x} days`} on={plan.days === x} onPress={() => set('days', x)} />)}</PlanSection>
       <PlanSection title="Session length">{([30, 45, 60, 75] as const).map((x) => <Chip key={x} label={`${x} min`} on={plan.minutes === x} onPress={() => set('minutes', x)} />)}</PlanSection>

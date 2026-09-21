@@ -41,7 +41,6 @@ export type WorkoutPlan = {
   emphasis?: 'balanced' | 'glutes_legs' | 'upper_body' | 'athletic';
   limitations?: ('knees' | 'lower_back' | 'shoulders')[];
   trainingStyle?: 'mixed' | 'free_weights' | 'machines';
-  verticalPull?: 'lat_pulldown' | 'pullups' | 'assisted' | 'auto';
   personalized?: boolean;
 };
 
@@ -106,7 +105,7 @@ export const DEFAULT_SETTINGS: Settings = {
   waterGoalOz: 96,
   stepGoal: 8000,
   notifications: { meals: false, water: false, weighIn: false },
-  workoutPlan: { split: 'full_body', goal: 'general', goals: ['general'], days: 3, minutes: 45, equipment: 'gym', equipmentOptions: ['gym'], cardio: 'walk', cardioOptions: ['walk'], experience: 'beginner', emphasis: 'balanced', limitations: [], trainingStyle: 'mixed', verticalPull: 'lat_pulldown', personalized: false },
+  workoutPlan: { split: 'full_body', goal: 'general', goals: ['general'], days: 3, minutes: 45, equipment: 'gym', equipmentOptions: ['gym'], cardio: 'walk', cardioOptions: ['walk'], experience: 'beginner', emphasis: 'balanced', limitations: [], trainingStyle: 'mixed', personalized: false },
 };
 
 type State = {
