@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { CameraView, useCameraPermissions, type BarcodeScanningResult } from 'expo-camera';
 import { ImageManipulator, SaveFormat } from 'expo-image-manipulator';
 import * as ImagePicker from 'expo-image-picker';
@@ -16,6 +17,7 @@ import { useStore } from '../src/store';
 import { color, font, space } from '../src/theme';
 
 type Mode = 'food' | 'barcode' | 'label';
+const CAMERA_PERMISSION_ASKED_KEY = 'vahla.cameraPermissionAsked';
 
 async function toBase64(uri: string) {
   // Smaller photos mean a faster round trip to Claude — this stays plenty sharp for reading a plate or a label.
@@ -50,12 +52,26 @@ export default function Scan() {
 
   useEffect(() => {
     aiAvailable().then((a) => setAiReady(!!a));
-    // Auto-request camera permission on first visit so the user isn't
-    // asked to tap "Allow" every single time they open the scanner.
-    if (perm && !perm.granted && perm.canAskAgain) {
-      requestPerm();
-    }
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    if (!perm || perm.granted || !perm.canAskAgain) return;
+    let active = true;
+    AsyncStorage.getItem(CAMERA_PERMISSION_ASKED_KEY)
+      .then(async (asked) => {
+        if (!active || asked) return;
+        // Record the first automatic request before opening the OS prompt. If
+        // the user declines, later visits show a button instead of prompting.
+        await AsyncStorage.setItem(CAMERA_PERMISSION_ASKED_KEY, 'true');
+        if (active) await requestPerm();
+      })
+      .catch(() => {
+        // Storage being unavailable should never create a permission loop.
+      });
+    return () => {
+      active = false;
+    };
+  }, [perm, requestPerm]);
 
   // If nothing scans after a while, suggest light or typing the number.
   useEffect(() => {
