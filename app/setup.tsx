@@ -139,6 +139,10 @@ export default function Setup() {
             <Text style={styles.brand}>vahla</Text>
             <Text style={styles.tagline}>What’re ya hungry for?</Text>
             <Text style={styles.pitch}>Track calories, and when a craving hits, see exactly how to make it fit.</Text>
+            <View style={styles.welcomeActions}>
+              <Button label="Get started" onPress={() => setStep(1)} />
+              <Button label="I already have an account" kind="ghost" onPress={() => router.push({ pathname: '/account', params: { mode: 'signin' } })} />
+            </View>
           </View>
         ) : (
           <Text style={styles.h1} accessibilityRole="header">
@@ -309,7 +313,7 @@ export default function Setup() {
                 style={[styles.option, f.activity === a.v && styles.optionOn]}
               >
                 <Text style={[styles.optTitle, f.activity === a.v && { color: '#fff' }]}>{a.label}</Text>
-                <Text style={[styles.optSub, f.activity === a.v && { color: '#A9BAD3' }]}>{a.sub}</Text>
+                <Text style={[styles.optSub, f.activity === a.v && { color: '#C7C7C7' }]}>{a.sub}</Text>
               </Pressable>
             ))}
           </View>
@@ -370,16 +374,11 @@ export default function Setup() {
         ) : null}
       </ScrollView>
 
-      <View style={[styles.footer, { paddingBottom: insets.bottom + space.m }]}>
-        {step === 0 ? (
-          <>
-            <Button label="Get started" onPress={() => setStep(1)} />
-            <Button label="I already have an account" kind="ghost" onPress={() => router.push({ pathname: '/account', params: { mode: 'signin' } })} />
-          </>
-        ) : (
+      {step > 0 ? (
+        <View style={[styles.footer, { paddingBottom: insets.bottom + space.m }]}>
           <Button label={step === 5 ? 'Save my plan' : 'Continue'} disabled={!valid} onPress={() => (step === 5 ? finish() : setStep(step + 1))} />
-        )}
-      </View>
+        </View>
+      ) : null}
     </KeyboardAvoidingView>
   );
 }
@@ -391,6 +390,7 @@ const styles = StyleSheet.create({
   dot: { width: 28, height: 4, borderRadius: 2, backgroundColor: color.line },
   body: { paddingHorizontal: space.l, paddingBottom: space.xl, maxWidth: 560, width: '100%', alignSelf: 'center' },
   welcome: { alignItems: 'center', paddingTop: space.xxl },
+  welcomeActions: { width: '100%', marginTop: space.xl, gap: space.xs },
   brand: { fontFamily: font.displayBold, fontSize: 34, color: color.ink, marginTop: space.l, letterSpacing: -1 },
   tagline: { fontFamily: font.displayMed, fontSize: 18, color: color.gauge, marginTop: 4 },
   pitch: { fontSize: 16, color: color.sub, textAlign: 'center', marginTop: space.l, lineHeight: 23, maxWidth: 320 },
@@ -406,11 +406,11 @@ const styles = StyleSheet.create({
   optSub: { fontSize: 13, color: color.sub, marginTop: 2 },
   warn: { color: color.danger, fontSize: 13, lineHeight: 18 },
   warnBox: { backgroundColor: color.wash2, borderRadius: 12, padding: space.m, gap: 6 },
-  warnText: { color: '#7A4A00', fontSize: 13, lineHeight: 18 },
+  warnText: { color: color.ink2, fontSize: 13, lineHeight: 18 },
   fine: { fontSize: 13, color: color.sub, lineHeight: 19 },
   planCard: { backgroundColor: color.ink, borderRadius: 22, padding: space.xl, alignItems: 'center' },
   planCal: { fontFamily: font.displayBold, fontSize: 48, color: '#fff', letterSpacing: -1 },
-  planSub: { color: '#A9BAD3', fontSize: 13 },
+  planSub: { color: '#C7C7C7', fontSize: 13 },
   planMacros: { flexDirection: 'row', justifyContent: 'space-around', alignSelf: 'stretch', marginTop: space.l },
   planMacro: { fontFamily: font.display, fontSize: 20, color: '#fff' },
   footer: { paddingHorizontal: space.l, paddingTop: space.m, gap: space.xs, maxWidth: 560, width: '100%', alignSelf: 'center' },

@@ -43,7 +43,7 @@ function TabBar({ state, navigation }: BottomTabBarProps) {
     );
   };
   return (
-    <View style={[styles.bar, { paddingBottom: Math.max(insets.bottom, 8) }]}>
+    <View style={[styles.bar, { bottom: Math.max(insets.bottom, 12) }]}>
       {item(0)}
       {item(1)}
       <View style={styles.item}>
@@ -57,7 +57,6 @@ function TabBar({ state, navigation }: BottomTabBarProps) {
           style={({ pressed }) => [styles.add, pressed && { transform: [{ scale: 0.95 }] }]}
         >
           <Ionicons name="add" size={30} color="#fff" />
-          <View style={styles.addNeedle} />
         </Pressable>
       </View>
       {item(2)}
@@ -134,15 +133,20 @@ const styles = StyleSheet.create({
   bar: {
     flexDirection: 'row',
     backgroundColor: 'rgba(255,255,255,0.98)',
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: color.line,
-    paddingTop: 6,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: color.line,
+    borderRadius: 28,
+    paddingVertical: 6,
     position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
+    left: 12,
+    right: 12,
+    shadowColor: '#000',
+    shadowOpacity: 0.12,
+    shadowRadius: 18,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 10,
   },
-  item: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 2, minHeight: 50 },
+  item: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 2, minHeight: 56 },
   label: { fontSize: 11, fontFamily: undefined },
   add: {
     width: 56,
@@ -156,17 +160,6 @@ const styles = StyleSheet.create({
     shadowRadius: 10,
     shadowOffset: { width: 0, height: 4 },
     elevation: 5,
-  },
-  addNeedle: {
-    position: 'absolute',
-    top: 6,
-    right: 6,
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: color.gauge,
-    borderWidth: 1.5,
-    borderColor: color.ink,
   },
 });
 const side = StyleSheet.create({
