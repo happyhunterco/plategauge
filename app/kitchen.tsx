@@ -24,11 +24,22 @@ export default function Kitchen() {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
 
+  const typedItems = item.split(',').map((value) => value.trim()).filter(Boolean);
+
   const run = async () => {
     setErr('');
+    const combined = [...new Set([...pantry, ...typedItems].map((value) => value.trim()).filter(Boolean))];
+    if (combined.length < 2) {
+      setErr('Add at least two ingredients first, like chicken and rice.');
+      return;
+    }
+    if (typedItems.length) {
+      addPantry(typedItems);
+      setItem('');
+    }
     setBusy(true);
     try {
-      const r = await pantryRecipes(pantry, mood, left);
+      const r = await pantryRecipes(combined, mood, left);
       setRecipes(r);
       if (!r.length) setErr('No recipes came back. Add a few more ingredients.');
     } catch (e) {
@@ -44,7 +55,7 @@ export default function Kitchen() {
         <Text style={styles.sub}>{fmt(left.calories)} cal left. Add what you have and we’ll suggest meals that fit.</Text>
         <Field
           icon="add"
-          placeholder="Chicken, rice, eggs…"
+          placeholder="Chicken, rice, eggs… separate with commas"
           value={item}
           onChangeText={setItem}
           returnKeyType="done"
@@ -54,6 +65,7 @@ export default function Kitchen() {
           }}
           accessibilityLabel="Add pantry item"
         />
+        <Text style={styles.hint}>Type at least two ingredients. You can press Suggest meals without pressing return first.</Text>
         <View style={styles.chips}>
           {pantry.map((p) => (
             <Chip key={p} label={p} icon="close" onPress={() => removePantry(p)} />
@@ -61,7 +73,7 @@ export default function Kitchen() {
         </View>
         <Field placeholder="In the mood for… (optional)" value={mood} onChangeText={setMood} />
         {err ? <ErrorNote text={err} /> : null}
-        <Button label="Suggest meals" icon="sparkles" onPress={run} loading={busy} disabled={pantry.length < 2} />
+        <Button label="Suggest meals" icon="sparkles" onPress={run} loading={busy} />
       </View>
       {recipes.length ? (
         <Section title="Ideas">
@@ -115,6 +127,7 @@ const styles = StyleSheet.create({
   pad: { paddingHorizontal: space.l, gap: space.m, paddingTop: space.m },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: space.s },
   sub: { fontSize: 13, color: color.sub, lineHeight: 18 },
+  hint: { fontSize: 11, color: color.sub, lineHeight: 16, marginTop: -6 },
   title: { fontFamily: font.display, fontSize: 17, color: color.ink },
   body: { fontSize: 14, color: color.ink, marginTop: 6, lineHeight: 20 },
 });

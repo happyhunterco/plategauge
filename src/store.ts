@@ -37,6 +37,9 @@ export type WorkoutPlan = {
   goals?: ('general' | 'muscle' | 'strength' | 'fat_loss')[];
   equipmentOptions?: ('gym' | 'home' | 'bodyweight')[];
   cardioOptions?: ('walk' | 'incline_walk' | 'run' | 'bike' | 'row' | 'intervals')[];
+  experience?: 'beginner' | 'intermediate' | 'advanced';
+  emphasis?: 'balanced' | 'glutes_legs' | 'upper_body' | 'athletic';
+  limitations?: ('knees' | 'lower_back' | 'shoulders')[];
 };
 
 export type Settings = {
@@ -100,7 +103,7 @@ export const DEFAULT_SETTINGS: Settings = {
   waterGoalOz: 96,
   stepGoal: 8000,
   notifications: { meals: false, water: false, weighIn: false },
-  workoutPlan: { split: 'full_body', goal: 'general', goals: ['general'], days: 3, minutes: 45, equipment: 'gym', equipmentOptions: ['gym'], cardio: 'walk', cardioOptions: ['walk'] },
+  workoutPlan: { split: 'full_body', goal: 'general', goals: ['general'], days: 3, minutes: 45, equipment: 'gym', equipmentOptions: ['gym'], cardio: 'walk', cardioOptions: ['walk'], experience: 'beginner', emphasis: 'balanced', limitations: [] },
 };
 
 type State = {

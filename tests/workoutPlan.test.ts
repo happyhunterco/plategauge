@@ -13,7 +13,7 @@ describe('daily workout plan', () => {
     const workout = dailyWorkout(plan, '2026-09-21');
     expect(workout.recovery).toBe(false);
     expect(workout.exercises.length).toBeGreaterThanOrEqual(4);
-    expect(workout.exercises.every((exercise) => exercise.sets === 4)).toBe(true);
+    expect(workout.exercises.every((exercise) => exercise.sets === 3)).toBe(true);
     expect(workout.cardio.minutes).toBeGreaterThanOrEqual(15);
   });
 
@@ -38,5 +38,13 @@ describe('daily workout plan', () => {
   it('adapts exercise names to bodyweight equipment', () => {
     const workout = dailyWorkout({ ...plan, equipment: 'bodyweight', equipmentOptions: ['bodyweight'] }, '2026-09-21');
     expect(workout.exercises.some((exercise) => /push-up|squat|row|hinge/i.test(exercise.name))).toBe(true);
+  });
+
+  it('personalizes volume, emphasis, and movement needs', () => {
+    const personalized = dailyWorkout({ ...plan, experience: 'advanced', emphasis: 'glutes_legs', limitations: ['knees'], minutes: 75 }, '2026-09-21');
+    expect(personalized.exercises.length).toBe(6);
+    expect(personalized.exercises.every((exercise) => exercise.sets === 4)).toBe(true);
+    expect(personalized.exercises.some((exercise) => /hip thrust/i.test(exercise.name))).toBe(true);
+    expect(personalized.exercises.some((exercise) => /back squat|lunge/i.test(exercise.name))).toBe(false);
   });
 });

@@ -40,6 +40,12 @@ const HOME: Record<string, string> = { 'Back squat': 'Goblet squat', 'Bench pres
 const BODY: Record<string, string> = { 'Back squat': 'Tempo squat', 'Front squat': 'Tempo squat', 'Bench press': 'Push-up', 'Incline dumbbell press': 'Feet-elevated push-up', 'Incline press': 'Feet-elevated push-up', 'Seated cable row': 'Table row', 'Chest-supported row': 'Table row', 'Single-arm row': 'Towel row', 'Romanian deadlift': 'Single-leg hip hinge', 'Trap-bar deadlift': 'Single-leg hip hinge', 'Dumbbell shoulder press': 'Pike push-up', 'Shoulder press': 'Pike push-up', 'Overhead press': 'Pike push-up', 'Lat pulldown': 'Pull-up or table row', 'Walking lunge': 'Reverse lunge', 'Leg curl': 'Slider leg curl', 'Hip thrust': 'Single-leg glute bridge', 'Farmer carry': 'Bear crawl', 'Rope pressdown': 'Diamond push-up', 'Overhead triceps extension': 'Diamond push-up', 'Dumbbell curl': 'Towel curl', 'Hammer curl': 'Towel curl', 'Cable curl + pressdown': 'Towel curl + diamond push-up', 'Goblet squat': 'Tempo squat', 'Kettlebell swing': 'Broad jump' };
 const ACTIVE_DAYS: Record<WorkoutPlan['days'], number[]> = { 3: [0, 2, 4], 4: [0, 1, 3, 5], 5: [0, 1, 2, 4, 5], 6: [0, 1, 2, 3, 4, 5] };
 const CARDIO_LABEL: Record<WorkoutPlan['cardio'], string> = { walk: 'Outdoor walk', incline_walk: 'Incline walk', run: 'Easy run', bike: 'Zone 2 ride', row: 'Steady row', intervals: 'Intervals' };
+const EMPHASIS_MOVE: Record<NonNullable<WorkoutPlan['emphasis']>, BaseExercise | null> = {
+  balanced: null,
+  glutes_legs: e('focus-glutes', 'Hip thrust', 'Glutes', '10–12'),
+  upper_body: e('focus-upper', 'Cable lateral raise', 'Shoulders', '12–15'),
+  athletic: e('focus-athletic', 'Sled push', 'Power · conditioning', '30 sec'),
+};
 const serialDay = (date: string) => { const [y, m, d] = date.split('-').map(Number); return Math.floor(Date.UTC(y, m - 1, d) / 86400000); };
 const weekday = (date: string) => (new Date(`${date}T12:00:00`).getDay() + 6) % 7;
 export const isTrainingDay = (plan: WorkoutPlan, date: string) => ACTIVE_DAYS[plan.days].includes(weekday(date));
@@ -63,8 +69,21 @@ export function dailyWorkout(plan: WorkoutPlan, date: string): DailyWorkout {
   const equipment = plan.equipmentOptions?.[0] ?? plan.equipment;
   const strengthGoal = plan.goal === 'strength' || plan.goals?.includes('strength');
   const muscleGoal = plan.goal === 'muscle' || plan.goal === 'recomp' || plan.goals?.includes('muscle');
-  const sets = strengthGoal ? 4 : muscleGoal ? 4 : 3;
-  const exercises = session.exercises.map((x) => ({ ...x, name: equipment === 'bodyweight' ? BODY[x.name] ?? x.name : equipment === 'home' ? HOME[x.name] ?? x.name : x.name, sets, rest: strengthGoal ? '2–3 min' : '60–90 sec' }));
+  const experience = plan.experience ?? 'beginner';
+  const sets = experience === 'beginner' ? 3 : experience === 'advanced' && strengthGoal ? 5 : strengthGoal || muscleGoal ? 4 : 3;
+  const emphasis = plan.emphasis ?? 'balanced';
+  const emphasisMove = EMPHASIS_MOVE[emphasis];
+  let baseExercises = [...session.exercises];
+  if (emphasisMove) baseExercises = plan.minutes === 75 ? [...baseExercises, emphasisMove] : [...baseExercises.slice(0, -1), emphasisMove];
+  if (plan.minutes === 30) baseExercises = baseExercises.slice(0, 4);
+  const limitations = plan.limitations ?? [];
+  const exercises = baseExercises.map((original) => {
+    let x = original;
+    if (limitations.includes('knees') && /squat|lunge/i.test(x.name)) x = e(`${x.id}-knee`, 'Glute bridge', 'Glutes · hamstrings', '12–15');
+    if (limitations.includes('lower_back') && /deadlift|hinge|romanian|barbell row/i.test(x.name)) x = e(`${x.id}-back`, /row/i.test(x.name) ? 'Chest-supported row' : 'Hip thrust', /row/i.test(x.name) ? 'Upper back' : 'Glutes', '10–12');
+    if (limitations.includes('shoulders') && /press|push-up|raise/i.test(x.name)) x = e(`${x.id}-shoulder`, 'Neutral-grip floor press', 'Chest · triceps', '8–12');
+    return { ...x, name: equipment === 'bodyweight' ? BODY[x.name] ?? x.name : equipment === 'home' ? HOME[x.name] ?? x.name : x.name, sets, rest: strengthGoal ? '2–3 min' : '60–90 sec' };
+  });
   return { id: session.id, title: session.title, focus: session.focus, recovery: false, duration: plan.minutes, exercises, cardio: { kind: cardio, label: CARDIO_LABEL[cardio], minutes: cardioMins, detail: cardio === 'intervals' ? '6 rounds · hard / easy' : 'Zone 2 · steady, sustainable pace' } };
 }
 

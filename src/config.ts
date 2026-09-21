@@ -5,9 +5,16 @@ import { Platform } from 'react-native';
  * Web equivalents of the VITE_* names from the brief: EXPO_PUBLIC_APP_STORE_URL / EXPO_PUBLIC_GOOGLE_PLAY_URL.
  */
 const trim = (v?: string) => (v ?? '').trim().replace(/\/$/, '');
+const configuredApiUrl = trim(process.env.EXPO_PUBLIC_API_URL);
+// A custom Netlify domain serves the app and functions together. Using its live origin
+// avoids baking an obsolete *.netlify.app hostname into the installed web app.
+const liveWebOrigin =
+  Platform.OS === 'web' && typeof window !== 'undefined' && !/^(localhost|127\.0\.0\.1)$/.test(window.location.hostname)
+    ? window.location.origin
+    : '';
 
 export const config = {
-  apiUrl: trim(process.env.EXPO_PUBLIC_API_URL),
+  apiUrl: liveWebOrigin || configuredApiUrl,
   appKey: trim(process.env.EXPO_PUBLIC_APP_KEY),
   supabaseUrl: trim(process.env.EXPO_PUBLIC_SUPABASE_URL),
   supabaseAnonKey: trim(process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY),

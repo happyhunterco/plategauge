@@ -14,6 +14,7 @@ const MESSAGES: Record<string, string> = {
   rate_limited: 'Too many requests. Try again in a minute.',
   ai_not_configured: 'AI isn’t connected on the server yet.',
   offline: 'You’re offline. Check your connection and try again.',
+  network: 'Vahla couldn’t reach its server. Please try again.',
   timeout: 'That took too long to process. Try a smaller photo, or try again.',
   upstream: 'The AI service had a problem on its end. Try again in a moment.',
 };
@@ -38,7 +39,8 @@ export async function api<T>(path: string, init: RequestInit & { token?: string 
     });
   } catch (e) {
     if ((e as Error).name === 'AbortError') throw new ApiError(MESSAGES.timeout, 'timeout');
-    throw new ApiError(MESSAGES.offline, 'offline');
+    const isActuallyOffline = typeof navigator !== 'undefined' && navigator.onLine === false;
+    throw new ApiError(MESSAGES[isActuallyOffline ? 'offline' : 'network'], isActuallyOffline ? 'offline' : 'network');
   } finally {
     clearTimeout(timer);
   }
