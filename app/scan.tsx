@@ -185,7 +185,7 @@ export default function Scan() {
           <Ionicons name="camera-outline" size={36} color="#fff" />
           <Text style={styles.centerTitle}>Camera access needed</Text>
           <Text style={styles.centerBody}>
-            {mode === 'barcode' ? 'Scan a barcode to pull the product’s label data and score.' : 'Take a photo so PlateGauge can analyze it.'}
+            {mode === 'barcode' ? 'Scan a barcode to pull the product’s label data and score.' : 'Take a photo so Vahla can analyze it.'}
           </Text>
           {perm.canAskAgain ? (
             <Pressable style={styles.primary} onPress={requestPerm} accessibilityRole="button">

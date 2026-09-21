@@ -29,7 +29,7 @@ export function InstallPrompt() {
   return (
     <View style={styles.box}>
       <Text style={styles.text}>
-        {evt ? 'Add PlateGauge to your home screen for quick logging.' : 'To add the web app to your home screen, tap Share, then Add to Home Screen.'}
+        {evt ? 'Add Vahla to your home screen for quick logging.' : 'To add the web app to your home screen, tap Share, then Add to Home Screen.'}
       </Text>
       <View style={styles.row}>
         {evt ? (

@@ -4,7 +4,6 @@ import { exerciseBonus } from '../shared/targets';
 import { streakInfo } from '../shared/streak';
 import { dayKey } from './dates';
 import { useStore } from './store';
-import { color as lightColor, dark as darkColor } from './theme';
 
 export function useDayTotals(day: string) {
   const entries = useStore((s) => s.entries);
@@ -77,11 +76,6 @@ export function useStreak() {
 }
 
 export const fmt = (n: number) => Math.round(n).toLocaleString('en-US');
-
-export function useColors() {
-  const dm = useStore((s) => s.darkMode);
-  return dm ? darkColor : lightColor;
-}
 
 export function useIsPro() {
   const sub = useStore((s) => s.subscription);

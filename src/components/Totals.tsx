@@ -21,7 +21,7 @@ export function Totals({ n, left, estimated }: { n: Nutrients; left: Left; estim
           </Text>
         </View>
       </View>
-      <Text style={[styles.after, after.calories < 0 && { color: color.needle }]}>
+      <Text style={[styles.after, after.calories < 0 && { color: color.ink2 }]}>
         {after.calories >= 0
           ? `After this: ${fmt(after.calories)} cal and ${fmt(Math.max(after.protein, 0))}g protein left`
           : `After this: ${fmt(-after.calories)} cal over today`}

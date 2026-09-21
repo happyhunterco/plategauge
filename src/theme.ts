@@ -1,31 +1,32 @@
 import { Platform } from 'react-native';
 
-// Palette pulled straight from the PlateGauge mark.
+// Vahla is intentionally quiet: black, white, and neutral greys.
 export const color = {
-  ink: '#0B2551', // navy ring
-  ink2: '#123268', // lighter navy, for gradients/hovers
-  gauge: '#1592FF', // blue fill
-  gauge2: '#57B4FF', // lighter blue, for gradients
-  needle: '#F59A1E', // orange needle
+  ink: '#1A1A1A',
+  ink2: '#666666',
+  gauge: '#1A1A1A',
+  gauge2: '#1A1A1A',
+  // The sole accent. Reserved for the streak flame.
+  needle: '#E87A32',
   plate: '#FFFFFF',
-  rim: '#CFDBE6', // plate rim
-  wash: '#F3F6FA', // grouped background
-  wash2: '#EAF0F7', // slightly deeper wash, for nested surfaces
-  sub: '#5B6B84', // secondary text
-  faint: '#93A1B5',
-  line: '#E3E9F0',
-  lineSoft: '#EDF1F6',
-  danger: '#D6453D',
-  success: '#1C8C5E',
-  protein: '#1592FF',
-  carbs: '#0B2551',
-  fat: '#F59A1E',
+  rim: '#EDEDED',
+  wash: '#F7F7F7',
+  wash2: '#F1F1F1',
+  sub: '#707070',
+  faint: '#A3A3A3',
+  line: '#E5E5E5',
+  lineSoft: '#F0F0F0',
+  danger: '#666666',
+  success: '#4A4A4A',
+  protein: '#1A1A1A',
+  carbs: '#1A1A1A',
+  fat: '#1A1A1A',
 };
 
 export const shadow = {
-  card: { shadowColor: '#0B2551', shadowOpacity: 0.06, shadowRadius: 16, shadowOffset: { width: 0, height: 6 }, elevation: 2 },
-  raised: { shadowColor: '#0B2551', shadowOpacity: 0.12, shadowRadius: 24, shadowOffset: { width: 0, height: 10 }, elevation: 6 },
-  soft: { shadowColor: '#0B2551', shadowOpacity: 0.04, shadowRadius: 8, shadowOffset: { width: 0, height: 2 }, elevation: 1 },
+  card: { shadowColor: '#000000', shadowOpacity: 0.06, shadowRadius: 16, shadowOffset: { width: 0, height: 6 }, elevation: 2 },
+  raised: { shadowColor: '#000000', shadowOpacity: 0.12, shadowRadius: 24, shadowOffset: { width: 0, height: 10 }, elevation: 6 },
+  soft: { shadowColor: '#000000', shadowOpacity: 0.04, shadowRadius: 8, shadowOffset: { width: 0, height: 2 }, elevation: 1 },
 };
 
 export const font = {
@@ -46,26 +47,4 @@ export const type = {
   body: { fontSize: 16, color: color.ink },
   small: { fontSize: 13, color: color.sub },
   num: { fontFamily: font.display, color: color.ink, fontVariant: ['tabular-nums' as const] },
-};
-
-/** Dark-mode palette. Every key matches `color` so components can swap cleanly. */
-export const dark = {
-  ink: '#F0F4FA',
-  ink2: '#D8E0EC',
-  gauge: '#1592FF',
-  gauge2: '#57B4FF',
-  needle: '#F59A1E',
-  plate: '#1A1F2B',
-  rim: '#2E3544',
-  wash: '#141820',
-  wash2: '#1C212E',
-  sub: '#8A95AA',
-  faint: '#5A6578',
-  line: '#252C3A',
-  lineSoft: '#1E2430',
-  danger: '#E85C55',
-  success: '#2FAF7A',
-  protein: '#1592FF',
-  carbs: '#8AB4E8',
-  fat: '#F59A1E',
 };

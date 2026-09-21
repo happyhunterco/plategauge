@@ -84,7 +84,7 @@ export default function Profile() {
     const next = { ...s.settings.notifications, [k]: v };
     setNotifErr('');
     const r = await applyReminders(next).catch(() => 'unsupported' as const);
-    if (r === 'denied') return setNotifErr('Notifications are off for PlateGauge. Turn them on in Settings.');
+    if (r === 'denied') return setNotifErr('Notifications are off for Vahla. Turn them on in Settings.');
     if (r === 'unsupported') setNotifErr('Reminders work in the iPhone and Android app.');
     s.updateSettings({ notifications: next });
   };
@@ -110,13 +110,6 @@ export default function Profile() {
           </Text>
         </View>
       </View>
-
-      <Section title="Appearance">
-        <View style={styles.toggleRow}>
-          <Text style={styles.toggleLabel}>Dark mode</Text>
-          <Switch value={s.darkMode} onValueChange={(v) => useStore.getState().set({ darkMode: v } as any)} trackColor={{ true: color.gauge }} />
-        </View>
-      </Section>
 
       <Section title="Your info">
         <Field label="Display name" value={name} onChangeText={setName} onBlur={() => saveName()} placeholder="Your name" />
@@ -346,7 +339,7 @@ export default function Profile() {
           ) : null}
         </View>
         <Text style={styles.fine}>
-          PlateGauge offers general nutrition information, not medical advice. Nutrition values come from third-party databases and estimates and may not be
+          Vahla offers general nutrition information, not medical advice. Nutrition values come from third-party databases and estimates and may not be
           exact.
         </Text>
       </Section>

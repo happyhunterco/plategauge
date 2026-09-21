@@ -18,7 +18,7 @@ export function ensureAiConsent(): Promise<void> {
   return new Promise((resolve, reject) => {
     Alert.alert(
       'Use AI food analysis?',
-      'To analyze photos and descriptions, PlateGauge sends that photo or text, plus your remaining calories, to Anthropic’s Claude. Your food log and account details are not sent.',
+      'To analyze photos and descriptions, Vahla sends that photo or text, plus your remaining calories, to Anthropic’s Claude. Your food log and account details are not sent.',
       [
         {
           text: 'Don’t allow',

@@ -136,7 +136,7 @@ export default function Setup() {
         {step === 0 ? (
           <View style={styles.welcome}>
             <LogoMark size={120} />
-            <Text style={styles.brand}>PlateGauge</Text>
+            <Text style={styles.brand}>vahla</Text>
             <Text style={styles.tagline}>What’re ya hungry for?</Text>
             <Text style={styles.pitch}>Track calories, and when a craving hits, see exactly how to make it fit.</Text>
           </View>
@@ -363,7 +363,7 @@ export default function Setup() {
               </Text>
             ))}
             <Text style={styles.fine}>
-              PlateGauge gives general nutrition guidance, not medical advice. Talk to a doctor before big diet changes, especially if you’re pregnant or have a
+              Vahla gives general nutrition guidance, not medical advice. Talk to a doctor before big diet changes, especially if you’re pregnant or have a
               health condition.
             </Text>
           </View>
@@ -405,7 +405,7 @@ const styles = StyleSheet.create({
   optTitle: { fontFamily: font.display, fontSize: 16, color: color.ink },
   optSub: { fontSize: 13, color: color.sub, marginTop: 2 },
   warn: { color: color.danger, fontSize: 13, lineHeight: 18 },
-  warnBox: { backgroundColor: '#FFF4E5', borderRadius: 12, padding: space.m, gap: 6 },
+  warnBox: { backgroundColor: color.wash2, borderRadius: 12, padding: space.m, gap: 6 },
   warnText: { color: '#7A4A00', fontSize: 13, lineHeight: 18 },
   fine: { fontSize: 13, color: color.sub, lineHeight: 19 },
   planCard: { backgroundColor: color.ink, borderRadius: 22, padding: space.xl, alignItems: 'center' },

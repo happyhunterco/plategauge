@@ -4,8 +4,6 @@ import { forwardRef, useState, type ComponentProps, type ReactNode } from 'react
 import { ActivityIndicator, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, type TextInputProps, View, type ViewStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { fmt } from '../hooks';
-import { useStore } from '../store';
-import { dark } from '../theme';
 import { fieldLayout } from './fieldLayout';
 import { column, useWide } from '../layout';
 import { color, font, radius, shadow, space, type } from '../theme';
@@ -39,8 +37,6 @@ export function Screen({
 }) {
   const insets = useSafeAreaInsets();
   const wide = useWide();
-  const dm = useStore((s) => s.darkMode);
-  const c = dm ? dark : color;
   const header = title ? (
     <View style={styles.header}>
       <View style={{ flex: 1 }}>
@@ -55,7 +51,7 @@ export function Screen({
   const pad = { paddingTop: top ? insets.top + space.m : space.m, paddingBottom: wide ? 48 : 120 };
   if (!scroll)
     return (
-      <View style={[{ flex: 1, backgroundColor: bg ?? (dm ? '#0E1117' : '#fff') }, pad, column]}>
+      <View style={[{ flex: 1, backgroundColor: bg }, pad, column]}>
         {header}
         {children}
       </View>

@@ -76,5 +76,5 @@ export default function ResetPassword() {
 const styles = StyleSheet.create({
   pad: { paddingHorizontal: space.l, gap: space.m, paddingTop: space.l },
   body: { fontSize: 15, color: color.ink, lineHeight: 21 },
-  done: { fontSize: 14, color: color.ink, backgroundColor: '#E8F3FF', padding: space.m, borderRadius: 12 },
+  done: { fontSize: 14, color: color.ink, backgroundColor: color.wash2, padding: space.m, borderRadius: 12 },
 });

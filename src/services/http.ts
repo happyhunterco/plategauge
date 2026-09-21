@@ -56,6 +56,6 @@ export async function api<T>(path: string, init: RequestInit & { token?: string 
     const fallback = raw ? `Server error (${res.status}): ${raw.slice(0, 180)}` : `Server error (${res.status}).`;
     throw new ApiError(reason || MESSAGES[code] || fallback, code, res.status);
   }
-  if (data == null) throw new ApiError('The server sent back something PlateGauge couldn’t read. Try again.', 'bad_response', res.status);
+  if (data == null) throw new ApiError('The server sent back something Vahla couldn’t read. Try again.', 'bad_response', res.status);
   return data;
 }

@@ -1,5 +1,4 @@
-import Svg, { Circle, Line, Path } from 'react-native-svg';
-import { color } from '../theme';
+import { Image } from 'react-native';
 
 const arc = (cx: number, cy: number, r: number, from: number, to: number) => {
   const p = (deg: number) => {
@@ -11,22 +10,13 @@ const arc = (cx: number, cy: number, r: number, from: number, to: number) => {
   return `M ${x1} ${y1} A ${r} ${r} 0 ${to - from > 180 ? 1 : 0} 1 ${x2} ${y2}`;
 };
 
-/** The PlateGauge mark, drawn in vector so it stays crisp at any size. */
+/** The Vahla wing mark is a supplied brand asset, not a redrawn approximation. */
 export function LogoMark({ size = 28 }: { size?: number }) {
-  const n = (deg: number, r: number) => {
-    const a = ((deg - 90) * Math.PI) / 180;
-    return [50 + r * Math.cos(a), 50 + r * Math.sin(a)];
-  };
-  const [nx1, ny1] = n(45, 38.4);
-  const [nx2, ny2] = n(45, 50.5);
-  return (
-    <Svg width={size} height={size} viewBox="0 0 100 100">
-      <Circle cx={50} cy={50} r={39.7} stroke={color.ink} strokeWidth={10} fill={color.plate} />
-      <Path d={arc(50, 50, 39.7, 0, 126)} stroke={color.gauge} strokeWidth={10} strokeLinecap="round" fill="none" />
-      <Circle cx={50} cy={50} r={25.9} stroke={color.rim} strokeWidth={1.9} fill="none" />
-      <Line x1={nx1} y1={ny1} x2={nx2} y2={ny2} stroke={color.needle} strokeWidth={4} strokeLinecap="round" />
-    </Svg>
-  );
+  return <Image source={require('../../assets/vahla-wing.png')} style={{ width: size, height: Math.round(size * 0.58) }} resizeMode="contain" accessibilityLabel="Vahla" />;
+}
+
+export function LogoWordmark({ width = 76 }: { width?: number }) {
+  return <Image source={require('../../assets/vahla-wordmark.png')} style={{ width, height: Math.round(width * 0.259) }} resizeMode="contain" accessibilityLabel="vahla" />;
 }
 
 export { arc };

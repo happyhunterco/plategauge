@@ -230,5 +230,5 @@ const styles = StyleSheet.create({
   agree: { flexDirection: 'row', gap: space.s, alignItems: 'center', minHeight: 44 },
   agreeText: { flex: 1, fontSize: 14, color: color.ink },
   link: { color: color.gauge, fontWeight: '600' },
-  info: { fontSize: 14, color: color.ink, backgroundColor: '#E8F3FF', padding: space.m, borderRadius: 12, lineHeight: 20 },
+  info: { fontSize: 14, color: color.ink, backgroundColor: color.wash2, padding: space.m, borderRadius: 12, lineHeight: 20 },
 });

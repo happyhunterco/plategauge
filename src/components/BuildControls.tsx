@@ -142,7 +142,7 @@ function Group({ g, custom, selection, onChange }: { g: ModGroup; custom: Custom
 const styles = StyleSheet.create({
   head: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: space.s },
   title: { fontFamily: font.display, fontSize: 16, color: color.ink },
-  est: { fontSize: 11, color: '#9A5B00', backgroundColor: '#FFF4E5', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6, overflow: 'hidden' },
+  est: { fontSize: 11, color: color.sub, backgroundColor: color.wash2, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6, overflow: 'hidden' },
   bigRow: { flexDirection: 'row', gap: space.s },
   big: {
     flex: 1,

@@ -123,7 +123,7 @@ export function CalorieFacts({ day }: { day: string }) {
         <View style={styles.factDivider} />
         <Fact label="Budget" value={fmt(t.budget)} />
         <View style={styles.factDivider} />
-        <Fact label={t.left.calories >= 0 ? 'Left' : 'Over'} value={fmt(Math.abs(t.left.calories))} tint={t.left.calories >= 0 ? color.gauge : color.needle} />
+        <Fact label={t.left.calories >= 0 ? 'Left' : 'Over'} value={fmt(Math.abs(t.left.calories))} tint={t.left.calories >= 0 ? color.gauge : color.ink2} />
       </View>
       {note ? (
         <Pressable onPress={() => router.push('/profile')} accessibilityRole="button" style={styles.note}>
@@ -168,7 +168,7 @@ export function MacroTiles({ day }: { day: string }) {
               <Text style={styles.macroG}>/{fmt(r.g)}g</Text>
             </Text>
             <Bar value={r.v} max={r.g} tint={r.c} />
-            <Text style={[styles.macroLeft, left < 0 && { color: color.needle }]}>{left >= 0 ? `${left}g left` : `${-left}g over`}</Text>
+            <Text style={[styles.macroLeft, left < 0 && { color: color.ink2 }]}>{left >= 0 ? `${left}g left` : `${-left}g over`}</Text>
           </View>
         );
       })}
@@ -458,7 +458,7 @@ const styles = StyleSheet.create({
   stripWrap: { paddingHorizontal: space.l, paddingTop: space.xs },
   stripHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', minHeight: 28 },
   month: { fontFamily: font.displayMed, fontSize: 14, color: color.sub },
-  todayPill: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, height: 28, borderRadius: 14, backgroundColor: '#E8F3FF' },
+  todayPill: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, height: 28, borderRadius: 14, backgroundColor: color.wash2 },
   todayText: { color: color.gauge, fontWeight: '600', fontSize: 13 },
   strip: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 4 },
   dayCell: { alignItems: 'center', width: 44, minHeight: 64, gap: 4, paddingTop: 2 },
@@ -496,8 +496,8 @@ const styles = StyleSheet.create({
   factorDetail: { flex: 1, fontSize: 13, color: color.sub },
   waterRow: { flexDirection: 'row', gap: space.m, alignItems: 'center', marginBottom: 8 },
   waterBtns: { flexDirection: 'row', gap: space.s, marginTop: space.m },
-  waterBtn: { flex: 1, minHeight: 44, borderRadius: 12, backgroundColor: '#E8F3FF', alignItems: 'center', justifyContent: 'center' },
-  waterBtnText: { color: '#0B5CAD', fontWeight: '600', fontSize: 14 },
+  waterBtn: { flex: 1, minHeight: 44, borderRadius: 12, backgroundColor: color.wash2, alignItems: 'center', justifyContent: 'center' },
+  waterBtnText: { color: color.ink, fontWeight: '600', fontSize: 14 },
   timeline: { backgroundColor: '#fff', borderRadius: 18, borderWidth: StyleSheet.hairlineWidth, borderColor: color.line, overflow: 'hidden' },
   emptyTimeline: { paddingVertical: space.m },
   event: { flexDirection: 'row', alignItems: 'center', gap: space.m, paddingHorizontal: space.l, paddingVertical: 11, minHeight: 56 },

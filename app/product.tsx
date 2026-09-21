@@ -69,7 +69,7 @@ export default function Product() {
     fat: n.fat * qty,
     sodium: n.sodium == null ? null : n.sodium * qty,
   };
-  const tone = s?.score == null ? color.faint : s.score >= 7 ? '#1C8C5E' : s.score >= 4 ? color.needle : color.danger;
+  const tone = s?.score == null ? color.faint : s.score >= 7 ? color.ink : s.score >= 4 ? color.ink2 : color.sub;
 
   return (
     <View style={{ flex: 1, backgroundColor: '#fff' }}>

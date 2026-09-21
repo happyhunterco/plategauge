@@ -4,7 +4,7 @@ import { api, ApiError } from './http';
 
 /**
  * Where AI requests go:
- *  1. The PlateGauge server (the real app).
+ *  1. The Vahla server (the real app).
  *  2. Inside the claude.ai preview, Claude via the page's `sample` capability.
  *  3. Nowhere — the feature says it isn't connected. It never returns made-up food.
  */

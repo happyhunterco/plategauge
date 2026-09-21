@@ -1,4 +1,4 @@
-# PlateGauge
+# Vahla
 
 **What’re ya hungry for?** A calorie and macro tracker that tells you how to make a craving fit.
 

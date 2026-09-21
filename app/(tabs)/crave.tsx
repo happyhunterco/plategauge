@@ -349,7 +349,7 @@ type Left = { calories: number; protein: number; carbs: number; fat: number };
 function FitLine({ cal, left }: { cal: number; left: Left }) {
   const after = left.calories - cal;
   return (
-    <Text style={[styles.fit, after < -50 && { color: color.needle }]}>
+    <Text style={[styles.fit, after < -50 && { color: color.ink2 }]}>
       {after >= -50 ? `Fits. ${fmt(Math.max(after, 0))} cal left after` : `${fmt(-after)} cal over what’s left`}
     </Text>
   );
@@ -499,7 +499,7 @@ const styles = StyleSheet.create({
   fit: { fontSize: 13, fontWeight: '600', color: color.gauge, marginTop: 6 },
   warn: { fontSize: 13, color: color.danger, marginTop: 6 },
   why: { fontSize: 13, color: color.ink, lineHeight: 18 },
-  est: { fontSize: 11, color: '#9A5B00', marginTop: 4 },
+  est: { fontSize: 11, color: color.sub, marginTop: 4 },
   simHead: { flexDirection: 'row', gap: space.m, alignItems: 'flex-start' },
   simCal: { fontFamily: font.display, fontSize: 18, color: color.gauge },
   reasons: { fontSize: 12, color: color.ink, marginTop: 4 },

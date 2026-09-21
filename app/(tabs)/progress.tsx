@@ -164,7 +164,7 @@ export default function Progress() {
                       width={Math.max(barW * 0.64, 1.5)}
                       height={h}
                       rx={Math.min(3, barW / 4)}
-                      fill={d.cal > goals.calories * 1.1 ? color.needle : color.ink}
+                      fill={d.cal > goals.calories * 1.1 ? color.ink2 : color.ink}
                     />
                   );
                 })}

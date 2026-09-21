@@ -127,7 +127,7 @@ export async function signOut() {
 
 export async function deleteAccount() {
   if (authMode === 'supabase') {
-    if (!hasServer) throw new ApiError('Account deletion needs the PlateGauge server.', 'no_server');
+    if (!hasServer) throw new ApiError('Account deletion needs the Vahla server.', 'no_server');
     const { data } = await supabase!.auth.getSession();
     const token = data.session?.access_token;
     if (!token) throw new ApiError('Sign in again to delete your account.', 'auth');

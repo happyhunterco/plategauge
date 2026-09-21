@@ -10,20 +10,19 @@ import type { Quality, SourceInfo } from '../../shared/food';
 import { QUALITY_LABEL } from '../../shared/food';
 import { fmt, useStreak } from '../hooks';
 import { useStore } from '../store';
-import { dark as darkColors } from '../theme';
 import { color, font, shadow, space } from '../theme';
-import { LogoMark } from './Logo';
+import { LogoMark, LogoWordmark } from './Logo';
 import { Group, tap, type IconName } from './UI';
 import { CONTENT, useWide } from '../layout';
 
 const QUALITY_TONE: Record<Quality, { bg: string; fg: string; icon: IconName }> = {
-  verified_restaurant: { bg: '#E8F3FF', fg: '#0B5CAD', icon: 'checkmark-circle' },
-  verified_packaged: { bg: '#E8F3FF', fg: '#0B5CAD', icon: 'checkmark-circle' },
+  verified_restaurant: { bg: '#F1F1F1', fg: '#1A1A1A', icon: 'checkmark-circle' },
+  verified_packaged: { bg: '#F1F1F1', fg: '#1A1A1A', icon: 'checkmark-circle' },
   database: { bg: color.wash, fg: color.sub, icon: 'server-outline' },
   user: { bg: color.wash, fg: color.sub, icon: 'person-outline' },
-  estimate: { bg: '#FFF4E5', fg: '#9A5B00', icon: 'calculator-outline' },
-  photo_estimate: { bg: '#FFF4E5', fg: '#9A5B00', icon: 'camera-outline' },
-  development: { bg: '#F1ECFF', fg: '#5B3CC4', icon: 'construct-outline' },
+  estimate: { bg: '#F1F1F1', fg: '#4A4A4A', icon: 'calculator-outline' },
+  photo_estimate: { bg: '#F1F1F1', fg: '#4A4A4A', icon: 'camera-outline' },
+  development: { bg: '#F1F1F1', fg: '#4A4A4A', icon: 'construct-outline' },
 };
 
 const PROVIDER_NAME: Record<string, string> = {
@@ -34,7 +33,7 @@ const PROVIDER_NAME: Record<string, string> = {
   hff: 'HealthyFastFood.org',
   user: 'You',
   ai: 'AI',
-  template: 'PlateGauge',
+  template: 'Vahla',
   dev: 'Test data',
 };
 
@@ -95,7 +94,7 @@ export function Bar({ value, max, tint = color.gauge, height = 6 }: { value: num
   const over = max > 0 && value > max;
   return (
     <View style={[styles.track, { height, borderRadius: height / 2 }]}>
-      <View style={{ width: `${pct * 100}%`, height, borderRadius: height / 2, backgroundColor: over ? color.needle : tint }} />
+      <View style={{ width: `${pct * 100}%`, height, borderRadius: height / 2, backgroundColor: over ? color.ink2 : tint }} />
     </View>
   );
 }
@@ -193,7 +192,6 @@ export function StreakChip() {
 export function TopBar({ title, max = CONTENT }: { title?: string; max?: number }) {
   const insets = useSafeAreaInsets();
   const wide = useWide();
-  const dm = useStore((s) => s.darkMode);
   if (wide) {
     return (
       <View style={[styles.topWide, { maxWidth: max }]}>
@@ -204,12 +202,10 @@ export function TopBar({ title, max = CONTENT }: { title?: string; max?: number 
     );
   }
   return (
-    <View style={[styles.topBar, { paddingTop: insets.top + 6, backgroundColor: dm ? '#0E1117' : '#fff' }]}>
+    <View style={[styles.topBar, { paddingTop: insets.top + 6 }]}>
       <View style={styles.topLeft}>
         <LogoMark size={32} />
-        <Text style={styles.topTitle} accessibilityRole="header">
-          {title ?? 'PlateGauge'}
-        </Text>
+        {title ? <Text style={styles.topTitle} accessibilityRole="header">{title}</Text> : <LogoWordmark width={68} />}
       </View>
       <View style={styles.topRight}>
         <StreakChip />
@@ -257,7 +253,7 @@ export function DevDataBanner({ text, max = CONTENT }: { text: string; max?: num
   return (
     <View style={{ width: '100%', maxWidth: max, alignSelf: 'center', paddingHorizontal: space.l }}>
       <View style={styles.devBanner} accessibilityRole="text">
-        <Ionicons name="construct-outline" size={14} color="#5B3CC4" />
+        <Ionicons name="construct-outline" size={14} color={color.sub} />
         <Text style={styles.devText}>{text}</Text>
       </View>
     </View>
@@ -331,7 +327,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     marginTop: space.s,
   },
-  devText: { color: '#5B3CC4', fontSize: 12, flex: 1 },
+  devText: { color: color.sub, fontSize: 12, flex: 1 },
   track: { backgroundColor: color.wash, overflow: 'hidden' },
   row: { paddingVertical: 13, paddingHorizontal: space.l, minHeight: 52 },
   rowLine: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: color.line },

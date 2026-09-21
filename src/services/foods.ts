@@ -68,7 +68,7 @@ export async function searchFoods(
   } else if (dataMode === 'open-food-facts') {
     out = opts.kind === 'restaurant' || opts.kind === 'generic' ? { items: [], page, hasMore: false, providers: [] } : await offSearch(q, page, opts.signal);
   } else {
-    throw new ApiError('Food search needs the PlateGauge server. Add EXPO_PUBLIC_API_URL.', 'no_server');
+    throw new ApiError('Food search needs the Vahla server. Add EXPO_PUBLIC_API_URL.', 'no_server');
   }
   remember(key, out);
   return out;
@@ -156,7 +156,7 @@ export async function lookupBarcode(raw: string): Promise<BarcodeLookup> {
     }
     return { status: 'not_found', code, item: null, score: null, sources: ['off'] };
   }
-  throw new ApiError('Barcode lookup needs the PlateGauge app or server.', 'no_server');
+  throw new ApiError('Barcode lookup needs the Vahla app or server.', 'no_server');
 }
 
 /* ---------------- crave + build it ---------------- */

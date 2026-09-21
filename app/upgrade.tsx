@@ -44,7 +44,7 @@ export default function Upgrade() {
   return (
     <Screen title="Upgrade">
       <View style={styles.body}>
-        <Text style={styles.hero}>PlateGauge Pro</Text>
+        <Text style={styles.hero}>Vahla Pro</Text>
         <Text style={styles.sub}>Everything you need to hit your goals, no guesswork.</Text>
 
         <View style={styles.features}>

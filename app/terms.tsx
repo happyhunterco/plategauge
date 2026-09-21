@@ -9,11 +9,11 @@ export default function Terms() {
         <Text style={styles.updated}>Last updated: September 2026</Text>
 
         <Text style={styles.h}>Acceptance</Text>
-        <Text style={styles.p}>By using PlateGauge, you agree to these terms. If you do not agree, do not use the app.</Text>
+        <Text style={styles.p}>By using Vahla, you agree to these terms. If you do not agree, do not use the app.</Text>
 
-        <Text style={styles.h}>What PlateGauge is</Text>
+        <Text style={styles.h}>What Vahla is</Text>
         <Text style={styles.p}>
-          PlateGauge is a calorie and nutrition tracking tool. It provides estimates based on publicly available nutrition data and AI analysis. It is not
+          Vahla is a calorie and nutrition tracking tool. It provides estimates based on publicly available nutrition data and AI analysis. It is not
           medical advice. Always consult a healthcare professional before making significant changes to your diet.
         </Text>
 
@@ -30,13 +30,13 @@ export default function Terms() {
 
         <Text style={styles.h}>Acceptable use</Text>
         <Text style={styles.p}>
-          Do not use PlateGauge to harm others, reverse-engineer the service, or violate any laws. We reserve the right to suspend accounts that violate these
+          Do not use Vahla to harm others, reverse-engineer the service, or violate any laws. We reserve the right to suspend accounts that violate these
           terms.
         </Text>
 
         <Text style={styles.h}>Limitation of liability</Text>
         <Text style={styles.p}>
-          PlateGauge is provided as-is. We are not liable for any health outcomes, data loss, or damages arising from your use of the app. Use the nutrition
+          Vahla is provided as-is. We are not liable for any health outcomes, data loss, or damages arising from your use of the app. Use the nutrition
           information at your own discretion.
         </Text>
 
