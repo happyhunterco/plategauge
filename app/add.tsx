@@ -22,6 +22,7 @@ const ACTIONS: Action[] = [
   { label: 'Log water', icon: 'water-outline', to: '/quick?kind=water' },
   { label: 'Log weight', icon: 'scale-outline', to: '/quick?kind=weight' },
   { label: 'Add activity', icon: 'walk-outline', to: '/quick?kind=activity' },
+  { label: 'Plan a workout', icon: 'barbell-outline', to: '/workouts' },
   { label: 'What fits?', icon: 'restaurant-outline', to: '/crave' },
 ];
 

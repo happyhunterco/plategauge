@@ -40,7 +40,7 @@ export const handler: Handler = async (event) => {
       const userId = session.client_reference_id || session.metadata?.supabase_user_id;
       if (userId && session.subscription) {
         const subscription = await stripe.subscriptions.retrieve(session.subscription as string);
-        const plan = subscription.items.data[0]?.price?.lookup_key || 'pro';
+        const plan = subscription.metadata?.plan || subscription.items.data[0]?.price?.lookup_key || 'pro';
         await updateSubscription(userId, 'active', plan, (subscription as any).current_period_end);
       }
       break;
@@ -49,7 +49,7 @@ export const handler: Handler = async (event) => {
     case 'customer.subscription.deleted': {
       const userId = sub.metadata?.supabase_user_id;
       if (userId) {
-        const plan = sub.items?.data?.[0]?.price?.lookup_key || 'pro';
+        const plan = sub.metadata?.plan || sub.items?.data?.[0]?.price?.lookup_key || 'pro';
         await updateSubscription(userId, sub.status || 'canceled', sub.status === 'canceled' ? null : plan, (sub as any).current_period_end || null);
       }
       break;

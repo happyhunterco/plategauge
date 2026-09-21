@@ -1,60 +1,53 @@
 import type { Handler } from '@netlify/functions';
 import Stripe from 'stripe';
-import { createClient } from '@supabase/supabase-js';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', { apiVersion: '2024-12-18.acacia' as any });
-const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET || '';
+const headers = {
+  'Content-Type': 'application/json',
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+};
 
-const supabase = createClient(process.env.SUPABASE_URL || '', process.env.SUPABASE_SERVICE_ROLE_KEY || '');
-
-async function updateSubscription(userId: string, status: string, plan: string | null, currentPeriodEnd: number | null) {
-  await supabase.from('profiles').upsert(
-    {
-      id: userId,
-      subscription: { status, plan, current_period_end: currentPeriodEnd },
-      updated_at: new Date().toISOString(),
-    },
-    { onConflict: 'id' },
-  );
-}
+const reply = (statusCode: number, body: object) => ({ statusCode, headers, body: JSON.stringify(body) });
 
 export const handler: Handler = async (event) => {
-  if (event.httpMethod !== 'POST') return { statusCode: 405, body: 'POST only' };
+  if (event.httpMethod === 'OPTIONS') return reply(204, {});
+  if (event.httpMethod !== 'POST') return reply(405, { error: 'POST only' });
 
-  const sig = event.headers['stripe-signature'];
-  if (!sig || !webhookSecret) return { statusCode: 400, body: 'missing signature or secret' };
+  const secret = process.env.STRIPE_SECRET_KEY;
+  if (!secret) return reply(503, { error: 'Payments are not configured yet.' });
 
-  let stripeEvent: Stripe.Event;
+  let input: { plan?: string; userId?: string; email?: string };
   try {
-    stripeEvent = stripe.webhooks.constructEvent(event.body || '', sig, webhookSecret);
-  } catch (e) {
-    console.error('webhook signature verification failed', e);
-    return { statusCode: 400, body: 'invalid signature' };
+    input = JSON.parse(event.body || '{}');
+  } catch {
+    return reply(400, { error: 'Invalid request.' });
   }
+  if (!input.userId) return reply(401, { error: 'Sign in before upgrading.' });
+  if (input.plan !== 'monthly' && input.plan !== 'annual') return reply(400, { error: 'Choose a monthly or annual plan.' });
 
-  const sub = stripeEvent.data.object as Stripe.Subscription & { client_reference_id?: string };
+  const price = input.plan === 'annual' ? process.env.STRIPE_PRICE_ANNUAL : process.env.STRIPE_PRICE_MONTHLY;
+  if (!price) return reply(503, { error: 'That subscription plan is not configured yet.' });
 
-  switch (stripeEvent.type) {
-    case 'checkout.session.completed': {
-      const session = stripeEvent.data.object as Stripe.Checkout.Session;
-      const userId = session.client_reference_id || session.metadata?.supabase_user_id;
-      if (userId && session.subscription) {
-        const subscription = await stripe.subscriptions.retrieve(session.subscription as string);
-        const plan = subscription.items.data[0]?.price?.lookup_key || 'pro';
-        await updateSubscription(userId, 'active', plan, (subscription as any).current_period_end);
-      }
-      break;
-    }
-    case 'customer.subscription.updated':
-    case 'customer.subscription.deleted': {
-      const userId = sub.metadata?.supabase_user_id;
-      if (userId) {
-        const plan = sub.items?.data?.[0]?.price?.lookup_key || 'pro';
-        await updateSubscription(userId, sub.status || 'canceled', sub.status === 'canceled' ? null : plan, (sub as any).current_period_end || null);
-      }
-      break;
-    }
+  const configured = process.env.PUBLIC_SITE_URL || process.env.URL || process.env.DEPLOY_PRIME_URL || 'https://vahla.co';
+  const baseUrl = configured.replace(/\/$/, '');
+  const stripe = new Stripe(secret, { apiVersion: '2024-12-18.acacia' as any });
+  try {
+    const session = await stripe.checkout.sessions.create({
+      mode: 'subscription',
+      line_items: [{ price, quantity: 1 }],
+      client_reference_id: input.userId,
+      customer_email: input.email || undefined,
+      metadata: { supabase_user_id: input.userId, plan: input.plan },
+      subscription_data: { metadata: { supabase_user_id: input.userId, plan: input.plan } },
+      allow_promotion_codes: true,
+      success_url: `${baseUrl}/account?checkout=success`,
+      cancel_url: `${baseUrl}/upgrade?checkout=cancel`,
+    });
+    if (!session.url) return reply(502, { error: 'Stripe did not return a checkout link.' });
+    return reply(200, { url: session.url });
+  } catch (error) {
+    console.error('checkout session creation failed', error);
+    return reply(500, { error: 'Checkout could not be opened. Please try again.' });
   }
-
-  return { statusCode: 200, body: JSON.stringify({ received: true }) };
 };

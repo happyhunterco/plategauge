@@ -137,6 +137,19 @@ export function foodSearchScore(query: string, item: Pick<FoodItem, 'name' | 'br
 
 export type Scored = { item: FoodItem; score: number; reasons: string[]; fitsAsIs: boolean };
 
+/** A gentle wellness signal used only to reorder relevant choices, never to moralize food. */
+export function wellnessScore(item: FoodItem): number {
+  const n = item.nutrients;
+  const calories = Math.max(n.calories, 1);
+  const proteinDensity = (n.protein / calories) * 100;
+  let score = Math.min(proteinDensity, 12) * 35 + Math.min(n.fiber ?? 0, 10) * 25;
+  if (n.sodium != null) score -= Math.max(0, n.sodium - 700) * 0.12;
+  if (n.sugar != null) score -= Math.max(0, n.sugar - 18) * 8;
+  if (calories <= 700) score += 120;
+  if (calories > 1_000) score -= 180;
+  return Math.round(Math.max(-300, Math.min(score, 700)));
+}
+
 /**
  * Intent comes first. Fit and protein can reorder close matches but can never lift an
  * unrelated food above what the person asked for.
@@ -182,6 +195,7 @@ export function scoreCandidate(intent: Intent, item: FoodItem, left: Budget, opt
     s += Math.round((500 * Math.max(0, left.calories)) / item.nutrients.calories);
   }
   if (left.protein > 5) s += Math.round(Math.min(item.nutrients.protein / left.protein, 1) * 250);
+  s += wellnessScore(item);
   s += qualityRank(item.source.quality) * 30;
   return { item, score: s, reasons, fitsAsIs };
 }

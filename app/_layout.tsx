@@ -78,6 +78,7 @@ export default function RootLayout() {
         <Stack.Screen name="kitchen" options={{ title: 'Cook with what you have' }} />
         <Stack.Screen name="profile" options={{ title: 'Profile' }} />
         <Stack.Screen name="targets" options={{ title: 'Goals & targets' }} />
+        <Stack.Screen name="workouts" options={{ title: 'Workouts' }} />
       </Stack>
       <UndoToast />
     </SafeAreaProvider>

@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { ActivityIndicator, Linking, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Alert, Linking, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Screen, Button } from '../src/components/UI';
 import { color, font, space } from '../src/theme';
 import { useStore } from '../src/store';
@@ -31,11 +31,12 @@ export default function Upgrade() {
     try {
       const { url } = await api<{ url: string }>('/api/checkout', {
         method: 'POST',
-        body: JSON.stringify({ plan, userId: account.id, returnUrl: 'https://plategauge.netlify.app/account' }),
+        body: JSON.stringify({ plan, userId: account.id, email: account.email }),
       });
       if (url) await Linking.openURL(url);
     } catch (e) {
       console.error('checkout', e);
+      Alert.alert('Checkout unavailable', (e as Error).message || 'Please try again in a moment.');
     } finally {
       setLoading(false);
     }

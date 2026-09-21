@@ -76,7 +76,7 @@ export default function Today() {
             >
               <GradientBox style={styles.crave}>
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.craveTitle}>What’re ya hungry for?</Text>
+                  <Text style={styles.craveTitle}>Fuel your next move</Text>
                   <Text style={styles.craveSub}>Name any food. We’ll make it fit your {fmt(Math.max(t.left.calories, 0))} left.</Text>
                 </View>
                 <Ionicons name="arrow-forward" size={20} color="#fff" />

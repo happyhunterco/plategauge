@@ -27,12 +27,22 @@ export type Profile = {
 
 export type Goals = { calories: number; protein: number; carbs: number; fat: number; fiber: number };
 
+export type WorkoutPlan = {
+  split: 'ppl' | 'upper_lower' | 'full_body' | 'strength_cardio';
+  goal: 'general' | 'muscle' | 'strength' | 'fat_loss';
+  days: 3 | 4 | 5 | 6;
+  minutes: 30 | 45 | 60 | 75;
+  equipment: 'gym' | 'home' | 'bodyweight';
+  cardio: 'walk' | 'incline_walk' | 'run' | 'bike' | 'row' | 'intervals';
+};
+
 export type Settings = {
   units: 'imperial' | 'metric';
   exerciseMode: ExerciseMode;
   waterGoalOz: number;
   stepGoal: number;
   notifications: { meals: boolean; water: boolean; weighIn: boolean };
+  workoutPlan: WorkoutPlan;
 };
 
 export type Account = { id: string; email: string | null; provider: 'email' | 'apple' | 'google'; dev?: boolean };
@@ -87,6 +97,7 @@ export const DEFAULT_SETTINGS: Settings = {
   waterGoalOz: 96,
   stepGoal: 8000,
   notifications: { meals: false, water: false, weighIn: false },
+  workoutPlan: { split: 'full_body', goal: 'general', days: 3, minutes: 45, equipment: 'gym', cardio: 'walk' },
 };
 
 type State = {

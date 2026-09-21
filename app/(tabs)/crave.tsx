@@ -1,6 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useIsPro } from '../../src/hooks';
 import { useMemo, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import type { CraveResult, ExactResult } from '../../shared/crave';
@@ -18,7 +17,7 @@ import { crave, customize, dataMode } from '../../src/services/foods';
 import { useStore } from '../../src/store';
 import { color, font, space } from '../../src/theme';
 
-const EXAMPLES = ['Culver’s cheeseburger', 'Olive Garden lasagna', 'Something salty and crunchy', 'Sweet and cold'];
+const EXAMPLES = ['High-protein lunch', 'Healthiest meal at Chipotle', 'Something salty and crunchy', 'Sweet after dinner'];
 const EMPTY_MENU: FoodItem[] = [];
 
 export default function Crave() {
@@ -114,20 +113,21 @@ export default function Crave() {
       <Screen top={false}>
         <View style={styles.hero}>
           <Text style={styles.headline} accessibilityRole="header">
-            What’re ya hungry for?
+            Eat for your goals
           </Text>
           <Text style={styles.budget}>
             {fmt(left.calories)} cal and {fmt(left.protein)}g protein left today
           </Text>
+          <Text style={styles.muted}>Search any meal or restaurant. If it does not fit, Vahla finds a healthier version.</Text>
         </View>
         {dataMode === 'development' ? (
-          <DevDataBanner text="Development data: Culver’s, Olive Garden and a few snacks. Connect the server for every restaurant." />
+          <DevDataBanner text="Development data is limited. Connect the server for the full restaurant directory." />
         ) : null}
 
         <View style={styles.pad}>
           <Field
             icon="restaurant-outline"
-            placeholder="A Culver’s double cheeseburger, no mayo"
+            placeholder="Try a food, goal, craving, or restaurant"
             value={text}
             onChangeText={(t) => {
               setText(t);
@@ -135,7 +135,7 @@ export default function Crave() {
             }}
             returnKeyType="search"
             onSubmitEditing={() => run()}
-            accessibilityLabel="What you're hungry for"
+            accessibilityLabel="Search foods, goals, or restaurants"
           />
           {!result && !busy ? (
             <View style={styles.chips}>
@@ -177,7 +177,7 @@ export default function Crave() {
             ) : null}
 
             {menu.length ? (
-              <Section title={`${result.intent.restaurantName} menu`}>
+              <Section title={`${result.intent.restaurantName} menu · best fits first`}>
                 <View style={{ gap: space.m }}>
                   <Field
                     icon="search"
@@ -292,7 +292,7 @@ export default function Crave() {
             ) : null}
 
             {similarVisible && result.similar.length ? (
-              <Section title={ex ? 'Similar options' : 'Matches your craving'}>
+              <Section title={ex && !ex.fitsAsIs ? 'Healthier options that fit' : ex ? 'Similar options' : 'Matches your goal'}>
                 <View style={{ gap: space.m }}>
                   {result.similar.map((s) => (
                     <SimilarCard

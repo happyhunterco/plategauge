@@ -35,7 +35,7 @@
       "shortName": "Vahla",
       "themeColor": "#FFFFFF",
       "backgroundColor": "#FFFFFF",
-      "description": "Calorie and macro tracker. Tell it what you’re hungry for and see how to make it fit.",
+      "description": "Personalized nutrition, workouts, and daily progress—built for your best.",
       "lang": "en"
     },
     "plugins": [
@@ -77,6 +77,6 @@
     "experiments": {
       "typedRoutes": false
     },
-    "description": "Calorie and macro tracker. Tell it what you’re hungry for and see how to make it fit."
+    "description": "Personalized nutrition, workouts, and daily progress—built for your best."
   }
 }

@@ -298,7 +298,7 @@ function MovementPanel({ day }: { day: string }) {
   const quick = metric ? [250, 500] : [8, 16];
   return (
     <>
-      <Card onPress={() => router.push('/quick?kind=activity')} label="Movement">
+      <Card onPress={() => router.push('/workouts')} label="Movement and workout plan">
         <View style={styles.triple}>
           <View style={{ flex: 1 }}>
             <Text style={styles.macroK}>Steps</Text>
@@ -315,7 +315,7 @@ function MovementPanel({ day }: { day: string }) {
           </View>
         </View>
         {t.steps == null && !t.acts.length ? (
-          <Text style={styles.fine}>Add activity by hand, or connect Apple Health or Health Connect in Profile.</Text>
+          <Text style={styles.fine}>Build today’s strength or cardio workout, or connect health data in Profile.</Text>
         ) : null}
       </Card>
       <Card>

@@ -1,6 +1,6 @@
 # Vahla
 
-**What’re ya hungry for?** A calorie and macro tracker that tells you how to make a craving fit.
+**Built for your best.** Personalized nutrition, workouts, and daily progress in one health and wellness app.
 
 Expo SDK 57 · React Native 0.86 · Expo Router · Zustand · Supabase auth · Netlify Functions
 

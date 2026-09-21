@@ -3,10 +3,10 @@ import type { Customizable, FoodCategory, FoodItem, Selection } from './food';
 import { exactQuery, parseCraving, type Intent } from './intent';
 import { fits, type Budget } from './nutrients';
 import { applyAnswers, nextQuestion, type Question } from './questions';
-import { conflict, foodSearchScore, nameOverlap, rankCandidates, relevant, type Prefs, type Scored } from './rank';
+import { conflict, foodSearchScore, nameOverlap, rankCandidates, relevant, scoreCandidate, type Prefs, type Scored } from './rank';
 import { buildCustomizable, type Lookup } from './resolve';
 import { menuRuleFor, norm, restaurantById } from './restaurants';
-import { moodFoods } from './moodFoods';
+import { moodFoods, wellnessAlternatives } from './moodFoods';
 import { categoryOf, NEAR } from './tags';
 
 export type SearchOpts = { restaurantId?: string | null; restaurantName?: string | null; category?: FoodCategory | null; limit?: number };
@@ -136,7 +136,7 @@ export async function runCrave(input: CraveInput, deps: CraveDeps): Promise<Crav
     const seen = new Set<string>();
     const menu = found
       .filter((item) => item.kind === 'restaurant' && !seen.has(item.id) && seen.add(item.id))
-      .sort((a, b) => (a.category ?? 'other').localeCompare(b.category ?? 'other') || a.name.localeCompare(b.name));
+      .sort((a, b) => scoreCandidate(intent, b, input.left).score - scoreCandidate(intent, a, input.left).score);
     return { intent, question: null, exact: null, notFound: menu.length ? null : `We couldn’t load ${intent.restaurantName}’s menu right now.`, similar: [], showSimilar: false, blocked: [], menu };
   }
 
@@ -200,6 +200,13 @@ export async function runCrave(input: CraveInput, deps: CraveDeps): Promise<Crav
   // Guaranteed fallback: built-in real foods matching the mood, so Crave is never empty
   // for an abstract craving even with no AI and no restaurant-database hit.
   if (!intent.specific) pool.push(...moodFoods(intent));
+  if (exact && !exact.fitsAsIs) {
+    pool.push(...wellnessAlternatives(intent));
+    if (r) {
+      const menu = await deps.search(r.name, { restaurantId: r.id, restaurantName: r.name, limit: 100 }).catch(() => []);
+      pool.push(...menu);
+    }
+  }
 
   const exclude = new Set<string>();
   if (exact) {
@@ -208,10 +215,12 @@ export async function runCrave(input: CraveInput, deps: CraveDeps): Promise<Crav
   }
   const { ranked, blocked: b2 } = rankCandidates(intent, pool, input.left, input.prefs, exclude);
   blocked.push(...b2);
-  const similar = ranked.filter((s) => relevant(intent, s)).slice(0, 6);
+  const relevantRanked = ranked.filter((s) => relevant(intent, s));
+  const healthierAtRestaurant = exact && !exact.fitsAsIs && r ? ranked.filter((s) => s.item.restaurant === r.id && s.fitsAsIs && relevant(intent, s)) : [];
+  const combined = [...healthierAtRestaurant, ...relevantRanked];
+  const similar = combined.filter((s, index) => combined.findIndex((x) => x.item.id === s.item.id) === index).slice(0, 8);
 
-  const tweakFits = !!exact && (exact.fitsAsIs || exact.plans.length > 0);
-  const showSimilar = !exact || !tweakFits || intent.wantsAlternatives || !!exact.conflict;
+  const showSimilar = !exact || !exact.fitsAsIs || intent.wantsAlternatives || !!exact.conflict;
 
   const question = nextQuestion(intent, {
     ...ctx,

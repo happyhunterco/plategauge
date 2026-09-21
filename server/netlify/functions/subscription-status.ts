@@ -30,17 +30,8 @@ export const handler: Handler = async (event) => {
       if (!expired) return { statusCode: 200, headers: CORS, body: JSON.stringify({ subscription: sub }) };
     }
 
-    // Otherwise check Stripe directly for latest status
-    const customers = await stripe.customers.list({ limit: 1 });
-    // Find by metadata
-    const allCustomers = await stripe.customers.search({ query: `metadata['supabase_user_id']:'${userId}'`, limit: 1 });
-
-    if (allCustomers.data.length === 0) {
-      return { statusCode: 200, headers: CORS, body: JSON.stringify({ subscription: null }) };
-    }
-
-    const customer = allCustomers.data[0];
-    const subscriptions = await stripe.subscriptions.list({ customer: customer.id, status: 'active', limit: 1 });
+    // Otherwise recover directly from the metadata placed on the subscription at checkout.
+    const subscriptions = await stripe.subscriptions.search({ query: `metadata['supabase_user_id']:'${userId}' AND status:'active'`, limit: 1 });
 
     if (subscriptions.data.length === 0) {
       return { statusCode: 200, headers: CORS, body: JSON.stringify({ subscription: null }) };

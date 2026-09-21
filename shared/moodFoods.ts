@@ -63,6 +63,13 @@ const SEEDS: Seed[] = [
   { name: 'Grilled cheese', serving: '1 sandwich', n: n(400, 15, 33, 23, 760, 5, 2), tags: ['savory', 'hot', 'cheesy'] },
   { name: 'Chicken noodle soup', serving: '1 bowl', n: n(180, 12, 22, 5, 900, 3, 2), tags: ['savory', 'hot'] },
   { name: 'Turkey sandwich', serving: '1 sandwich', n: n(360, 24, 40, 11, 1100, 6, 4), tags: ['savory'] },
+  { name: 'Lean turkey burger', serving: '1 burger', n: n(390, 34, 34, 13, 620, 5, 5), tags: ['savory', 'hot'] },
+  { name: 'Burger bowl with lean beef', serving: '1 bowl', n: n(430, 38, 28, 18, 650, 7, 8), tags: ['savory', 'hot'] },
+  { name: 'High-protein flatbread pizza', serving: '1 personal pizza', n: n(440, 36, 48, 13, 720, 6, 8), tags: ['savory', 'hot', 'cheesy'] },
+  { name: 'Grilled chicken taco bowl', serving: '1 bowl', n: n(480, 42, 52, 12, 680, 6, 11), tags: ['savory', 'hot', 'spicy'] },
+  { name: 'Protein pasta with chicken marinara', serving: '1 bowl', n: n(510, 45, 58, 12, 690, 9, 10), tags: ['savory', 'hot'] },
+  { name: 'Grilled chicken wrap', serving: '1 wrap', n: n(410, 38, 39, 12, 670, 5, 7), tags: ['savory', 'hot'] },
+  { name: 'Salmon grain bowl', serving: '1 bowl', n: n(530, 38, 55, 18, 590, 6, 9), tags: ['savory', 'hot'] },
 ];
 
 let seq = 0;
@@ -90,4 +97,21 @@ export function moodFoods(intent: Intent): FoodItem[] {
   // Prefer foods that match more of the requested moods; keep a healthy spread.
   scored.sort((a, b) => b.hits - a.hits);
   return scored.slice(0, 12).map((x) => toItem(x.seed));
+}
+
+/** Goal-friendly versions to offer when the requested item does not fit. */
+export function wellnessAlternatives(intent: Intent): FoodItem[] {
+  const categoryNames: Partial<Record<string, string[]>> = {
+    burger: ['Lean turkey burger', 'Burger bowl with lean beef'],
+    pizza: ['High-protein flatbread pizza'],
+    burrito: ['Grilled chicken taco bowl'],
+    taco: ['Grilled chicken taco bowl'],
+    bowl: ['Grilled chicken taco bowl', 'Salmon grain bowl'],
+    pasta: ['Protein pasta with chicken marinara'],
+    chicken: ['Grilled chicken wrap', 'Grilled chicken taco bowl'],
+    sandwich: ['Grilled chicken wrap', 'Turkey sandwich'],
+    entree: ['Salmon grain bowl', 'Grilled chicken taco bowl'],
+  };
+  const names = categoryNames[intent.category ?? ''] ?? ['Salmon grain bowl', 'Grilled chicken taco bowl', 'Grilled chicken wrap'];
+  return SEEDS.filter((seed) => names.includes(seed.name)).map(toItem);
 }
