@@ -289,6 +289,8 @@ const styles = StyleSheet.create({
   topWide: { width: '100%', maxWidth: CONTENT, alignSelf: 'center', paddingHorizontal: space.l, paddingTop: 28, paddingBottom: 4 },
   topWideTitle: { fontFamily: font.displayBold, fontSize: 28, color: color.ink, letterSpacing: -0.6 },
   topBar: {
+    position: 'relative',
+    zIndex: 20,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',

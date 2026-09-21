@@ -2,20 +2,33 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="theme-color" content="#ffffff" />
     <meta name="description" content="Calorie and macro tracker. Tell it what you’re hungry for and see how to make it fit." />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-title" content="Vahla" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-    <link rel="icon" href="/favicon.ico?v=vahla-1" />
+    <link rel="icon" href="/favicon.ico?v=vahla-2" />
     <link rel="manifest" href="/manifest.webmanifest" />
     <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
     <title>Vahla</title>
     <style>
-      html, body { height: 100%; margin: 0; background: #fff; }
+      html, body, #root { height: 100%; margin: 0; background: #fff; }
       body { overflow: hidden; overscroll-behavior: none; }
-      #root { display: flex; height: 100%; flex: 1; position: relative; z-index: 1; }
+      #root { display: flex; flex: 1; position: relative; z-index: 1; isolation: isolate; }
+      /* Keep the iOS standalone status area opaque instead of showing Safari's glass blur. */
+      body::before {
+        content: '';
+        position: fixed;
+        z-index: 2147483647;
+        pointer-events: none;
+        top: 0;
+        right: 0;
+        left: 0;
+        height: env(safe-area-inset-top, 0px);
+        background: #fff;
+        transform: translateZ(0);
+      }
     </style>
   </head>
   <body>
