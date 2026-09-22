@@ -79,6 +79,17 @@ describe('HealthyFastFood provider', () => {
 });
 
 describe('Open Food Facts provider', () => {
+  it('uses indexed search when the serving-aware endpoint is unavailable', async () => {
+    vi.stubGlobal('fetch', vi.fn(async (url: string) =>
+      url.includes('/cgi/search.pl')
+        ? new Response(null, { status: 503 })
+        : new Response(JSON.stringify({ hits: [{ code: '7', product_name: 'Oat Bar', brands: 'Example', nutriments: { 'energy-kcal_100g': 400 } }] }), { status: 200 }),
+    ));
+    const results = await off.search!({ query: 'oat bar', page: 1, pageSize: 10 });
+    expect(results[0]?.serving.description).toBe('100 g');
+    expect(results[0]?.brand).toBe('Example');
+    expect(vi.mocked(fetch)).toHaveBeenCalledTimes(2);
+  });
   it('accepts the array-shaped brands field returned by search', () => {
     const item = offToItem({
       code: '123',

@@ -131,10 +131,21 @@ export const off: NutritionProvider = {
     // one bar/container/item instead of misleading per-100-g nutrition.
     const size = Math.min(Math.max(s.pageSize * 3, 30), 60);
     const url = `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(s.query)}&search_simple=1&action=process&json=1&page=${s.page}&page_size=${size}&fields=${OFF_FIELDS}`;
-    const res = await fetch(url, { headers: { 'User-Agent': OFF_UA } });
-    if (!res.ok) throw new Error(`Open Food Facts search ${res.status}`);
-    const data = (await res.json()) as { products?: OffProduct[] };
-    return (data.products ?? []).map(offToItem).filter((x): x is FoodItem => !!x);
+    let products: OffProduct[];
+    try {
+      const res = await fetch(url, { headers: { 'User-Agent': OFF_UA } });
+      if (!res.ok) throw new Error(`Open Food Facts search ${res.status}`);
+      products = ((await res.json()) as { products?: OffProduct[] }).products ?? [];
+    } catch {
+      // The classic API occasionally returns 503. Its indexed endpoint can
+      // still return products; missing serving weights remain honest 100 g.
+      const fallback = await fetch(`https://search.openfoodfacts.org/search?q=${encodeURIComponent(s.query)}&page=${s.page}&page_size=${size}`, {
+        headers: { 'User-Agent': OFF_UA },
+      });
+      if (!fallback.ok) throw new Error(`Open Food Facts search ${fallback.status}`);
+      products = ((await fallback.json()) as { hits?: OffProduct[] }).hits ?? [];
+    }
+    return products.map(offToItem).filter((x): x is FoodItem => !!x);
   },
   async barcode(code: string): Promise<BarcodeHit | null> {
     const p = await offProduct(code);

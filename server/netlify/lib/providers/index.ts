@@ -106,7 +106,7 @@ export async function searchFoods(p: SearchParams): Promise<SearchPage> {
       try {
         const items = await withTimeout(
           pr.search!({ query, page: p.page, pageSize: p.pageSize, restaurantOnly: wantRestaurant, brandedOnly: p.kind === 'branded' }),
-          5000,
+          pr.id === 'off' ? 8500 : 5000,
           pr.id,
         );
         providers.push({ id: pr.id, ok: true });
@@ -136,7 +136,9 @@ export async function searchFoods(p: SearchParams): Promise<SearchPage> {
   );
 
   const page: SearchPage = { items, page: p.page, hasMore: results.some((x) => x.length >= p.pageSize), providers };
-  if (providers.some((x) => x.ok)) searchCache.set(key, page);
+  // Partial results are useful now, but should be retried on the next search
+  // if a provider was temporarily unavailable.
+  if (providers.length > 0 && providers.every((x) => x.ok)) searchCache.set(key, page);
   return page;
 }
 
