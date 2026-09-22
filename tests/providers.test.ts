@@ -131,10 +131,28 @@ describe('Open Food Facts provider', () => {
       make('2', 'Protein Bar Salty Peanut', 'Barebell'),
       make('3', 'White Salty Peanut Protein Bar', 'Barebells'),
       make('4', 'Salty Peanut Protein Bar', "Nick's"),
+      make('5', 'Barebell Salty Peanut Protein Bar', 'Barebell'),
+      make('6', 'Salty Peanut Protein Bars, Salty Peanut', 'Barebells'),
+      make('7', 'Salty Peanut Protein Bar', 'NICKS'),
     ]);
     expect(result).toHaveLength(3);
     expect(result.map((item) => item.name)).toContain('White Salty Peanut Protein Bar');
     expect(result.map((item) => item.brand)).toContain("Nick's");
+  });
+
+  it('does not turn the count in a serving description into grams', () => {
+    const item = offToItem({
+      code: 'bar-no-weight', product_name: 'Cocoa Protein Bar', serving_size: '1 bar',
+      nutriments: { 'energy-kcal_100g': 400, proteins_100g: 30, carbohydrates_100g: 40, fat_100g: 10 },
+    });
+    expect(item?.serving.description).toBe('100 g');
+    expect(item?.nutrients.calories).toBe(400);
+    const labeled = offToItem({
+      code: 'bar-serving', product_name: 'Cocoa Protein Bar', serving_size: '1.0 bar',
+      nutriments: { 'energy-kcal_serving': 200, proteins_serving: 15, carbohydrates_serving: 20, fat_serving: 5 },
+    });
+    expect(labeled?.serving.description).toBe('1 bar');
+    expect(labeled?.nutrients.calories).toBe(200);
   });
 });
 

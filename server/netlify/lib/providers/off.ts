@@ -25,21 +25,24 @@ export type OffProduct = {
   last_modified_t?: number;
 };
 
-const FIELDS =
+export const OFF_FIELDS =
   'code,product_name,product_name_en,brands,serving_size,serving_quantity,nutriments,nutriscore_grade,nova_group,additives_tags,image_front_small_url,categories_tags,last_modified_t';
 
 export function offToItem(p: OffProduct): FoodItem | null {
   const n = p.nutriments ?? {};
   const name = (p.product_name_en || p.product_name || '').trim();
   if (!name) return null;
-  const rawServingGrams = num(p.serving_quantity) ?? num(p.serving_size?.match(/[\d.]+/)?.[0]);
+  // A label like "1 bar" does not establish a gram weight. In particular,
+  // taking its first digit as grams would turn a 200 kcal bar into 4 kcal.
+  const weightMatch = p.serving_size?.match(/(\d+(?:\.\d+)?)\s*(?:g|gr|grams?)\b/i);
+  const rawServingGrams = num(p.serving_quantity) ?? num(weightMatch?.[1]);
   const servingGrams = rawServingGrams && rawServingGrams > 0 && rawServingGrams <= 2_000 ? rawServingGrams : null;
   const hasServingNutrients = num(n['energy-kcal_serving']) != null || num(n['energy_serving']) != null;
   const perServing = (k: string) => {
     const direct = num(n[`${k}_serving`]);
     if (direct != null) return direct;
     const per100 = num(n[`${k}_100g`]);
-    return per100 != null && servingGrams ? (per100 * servingGrams) / 100 : per100;
+    return per100 != null && servingGrams ? (per100 * servingGrams) / 100 : null;
   };
   const g = (k: string) => (servingGrams || hasServingNutrients ? perServing(k) : num(n[`${k}_100g`]));
   const kcal = g('energy-kcal') ?? (g('energy') ?? 0) / 4.184;
@@ -75,7 +78,10 @@ export function offToItem(p: OffProduct): FoodItem | null {
 
 function friendlyPackagedServing(name: string, raw?: string): string {
   const cleaned = raw?.replace(/\s*\([^)]*\b(?:g|gram|grams|ml)\b[^)]*\)\s*/gi, ' ').trim();
-  if (cleaned && !/^\d+(?:\.\d+)?\s*(?:g|gram|grams|ml)$/i.test(cleaned)) return cleaned;
+  if (cleaned && /^1(?:\.0+)?\s+(?:bar|bars|cookie|cookies|bottle|can|shake|container)$/i.test(cleaned)) {
+    return `1 ${cleaned.replace(/^1(?:\.0+)?\s+/i, '').toLowerCase().replace(/(?:bars|cookies)$/, (s) => s === 'bars' ? 'bar' : 'cookie')}`;
+  }
+  if (cleaned && !/^\d+(?:\.\d+)?\s*(?:g|gr|gram|grams|ml)$/i.test(cleaned)) return cleaned;
   const value = name.toLowerCase();
   if (/\b(protein|granola|energy|snack|candy) bar\b|\bbar\b/.test(value)) return '1 bar';
   if (/\bshake\b/.test(value)) return '1 shake';
@@ -106,7 +112,7 @@ export function offSignals(p: OffProduct) {
 }
 
 export async function offProduct(code: string): Promise<OffProduct | null> {
-  const res = await fetch(`https://world.openfoodfacts.org/api/v2/product/${encodeURIComponent(code)}.json?fields=${FIELDS}`, {
+  const res = await fetch(`https://world.openfoodfacts.org/api/v2/product/${encodeURIComponent(code)}.json?fields=${OFF_FIELDS}`, {
     headers: { 'User-Agent': OFF_UA },
   });
   if (res.status === 404) return null;
@@ -124,7 +130,7 @@ export const off: NutritionProvider = {
     // classic JSON search includes the label serving, so results can default to
     // one bar/container/item instead of misleading per-100-g nutrition.
     const size = Math.min(Math.max(s.pageSize * 3, 30), 60);
-    const url = `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(s.query)}&search_simple=1&action=process&json=1&page=${s.page}&page_size=${size}&fields=${FIELDS}`;
+    const url = `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(s.query)}&search_simple=1&action=process&json=1&page=${s.page}&page_size=${size}&fields=${OFF_FIELDS}`;
     const res = await fetch(url, { headers: { 'User-Agent': OFF_UA } });
     if (!res.ok) throw new Error(`Open Food Facts search ${res.status}`);
     const data = (await res.json()) as { products?: OffProduct[] };

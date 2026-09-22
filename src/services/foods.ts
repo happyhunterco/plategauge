@@ -7,7 +7,7 @@ import { barcodeVariants } from '../../shared/barcode';
 import { labelScore, type LabelScore } from '../../shared/productScore';
 import { foodSearchScore } from '../../shared/rank';
 import { DEV_BARCODES, devLookup, devSearch } from '../../shared/dev/fixtures';
-import { offProduct, offSignals, offToItem } from '../../server/netlify/lib/providers/off';
+import { OFF_FIELDS, offProduct, offSignals, offToItem } from '../../server/netlify/lib/providers/off';
 import { OFF_UA } from '../../server/netlify/lib/providers/types';
 import { api, ApiError } from './http';
 import { aiAvailable } from './aiTransport';
@@ -33,13 +33,13 @@ const remember = (k: string, v: SearchPage) => {
 };
 
 async function offSearch(q: string, page: number, signal?: AbortSignal): Promise<SearchPage> {
-  const res = await fetch(`https://search.openfoodfacts.org/search?q=${encodeURIComponent(q)}&page=${page}&page_size=20`, {
+  const res = await fetch(`https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(q)}&search_simple=1&action=process&json=1&page=${page}&page_size=40&fields=${OFF_FIELDS}`, {
     signal,
     headers: { 'User-Agent': OFF_UA },
   });
   if (!res.ok) throw new ApiError('Food search is unavailable right now.', 'off');
-  const data = (await res.json()) as { hits?: Parameters<typeof offToItem>[0][] };
-  const items = (data.hits ?? [])
+  const data = (await res.json()) as { products?: Parameters<typeof offToItem>[0][] };
+  const items = (data.products ?? [])
     .map(offToItem)
     .filter((x): x is FoodItem => !!x)
     .sort((a, b) => foodSearchScore(q, b) - foodSearchScore(q, a) || a.name.length - b.name.length);

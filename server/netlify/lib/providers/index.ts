@@ -20,8 +20,12 @@ const barcodeCache = new TTLCache<BarcodeResult>(60 * 60_000);
 
 const restaurantSourceRank = (f: FoodItem) => (f.source.provider === 'hff' ? 2 : f.kind === 'restaurant' ? 1 : 0);
 
-const productNameKey = (value: string) => [...new Set(norm(value).split(' ').filter(Boolean))].sort().join(' ');
-const companyKey = (value: string) => norm(value).replace(/\b(inc|llc|ltd|company|co)\b/g, '').replace(/\s+/g, ' ').trim().replace(/s$/, '');
+const companyKey = (value: string) =>
+  norm(value.replace(/[’'`]/g, ''))
+    .replace(/\b(inc|llc|ltd|company|co)\b/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .replace(/s$/, '');
 const editDistance = (a: string, b: string) => {
   const row = Array.from({ length: b.length + 1 }, (_, i) => i);
   for (let i = 1; i <= a.length; i++) {
@@ -41,6 +45,14 @@ const sameCompany = (a?: string | null, b?: string | null) => {
   if (!x || !y) return !x && !y;
   return x === y || (x.length >= 5 && y.length >= 5 && editDistance(x, y) <= 1);
 };
+const productNameKey = (name: string, brand?: string | null) => {
+  const words = norm(name).split(' ').filter(Boolean);
+  // Some databases prepend the maker to the food name; the brand field
+  // already identifies it. Keep flavor words so distinct bars remain visible.
+  const maker = companyKey(brand ?? '');
+  const withoutMaker = maker && words.length > 2 ? words.filter((word) => companyKey(word) !== maker) : words;
+  return [...new Set(withoutMaker.map((word) => (word.length > 3 ? word.replace(/s$/, '') : word)))].sort().join(' ');
+};
 const nutritionCompleteness = (item: FoodItem) =>
   [item.nutrients.calories, item.nutrients.protein, item.nutrients.carbs, item.nutrients.fat, item.nutrients.fiber, item.nutrients.sugar, item.nutrients.sodium].filter(
     (value) => value != null,
@@ -56,9 +68,9 @@ const copyScore = (item: FoodItem) =>
 export function dedupe(items: FoodItem[]): FoodItem[] {
   const kept: FoodItem[] = [];
   for (const it of items) {
-    const name = productNameKey(it.name);
+    const name = productNameKey(it.name, it.brand);
     const index = kept.findIndex((cur) => {
-      if (cur.kind === 'branded' && it.kind === 'branded') return productNameKey(cur.name) === name && sameCompany(cur.brand, it.brand);
+      if (cur.kind === 'branded' && it.kind === 'branded') return productNameKey(cur.name, cur.brand) === name && sameCompany(cur.brand, it.brand);
       return norm(cur.brand ?? cur.restaurant ?? '') === norm(it.brand ?? it.restaurant ?? '') && norm(cur.name) === norm(it.name);
     });
     if (index < 0) kept.push(it);
